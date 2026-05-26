@@ -1,6 +1,8 @@
-# Code Review Agent
+# repo-ready
 
 [![CI](https://github.com/lyunify/code-review-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/lyunify/code-review-agent/actions/workflows/ci.yml)
+
+**Live demo: [www.repo-ready.com](https://www.repo-ready.com)**
 
 An AI-assisted repository readiness platform that helps CS students evaluate whether a GitHub project is strong enough to include on an SDE internship resume. It analyzes public repositories, scores project readiness, generates prioritized improvement plans, and turns technical signals into resume and interview preparation guidance.
 
@@ -95,7 +97,7 @@ Add your OpenAI API key to `backend/.env`:
 
 ```bash
 OPENAI_API_KEY=your_api_key_here
-OPENAI_MODEL=gpt-5.4-mini
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 Install the React frontend:
@@ -158,7 +160,8 @@ cd frontend
 ## API Endpoints
 
 - `GET /health`: backend health check.
-- `POST /api/analyze`: clone and analyze a public repository.
+- `POST /api/analyze`: enqueue a repository analysis job; returns `job_id`.
+- `GET /api/jobs/{job_id}`: poll job status (`pending` → `running` → `done` / `failed`); returns result when done.
 - `GET /api/history`: return recent saved analysis records.
 - `GET /api/history/{record_id}`: reopen a saved analysis report.
 
@@ -174,8 +177,6 @@ cd frontend
 
 ## Future Improvements
 
-- Replace screenshot placeholders with polished dashboard, action plan, and mentor view screenshots.
-- Deploy the React frontend and FastAPI backend for public demos.
 - Expand GitHub API support with commit activity, pull request history, and repository health signals.
 - Add per-user saved reports and authentication.
 - Support private repositories through secure GitHub OAuth.
