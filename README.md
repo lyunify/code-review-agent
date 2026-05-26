@@ -69,19 +69,29 @@ More details are available in [`docs/architecture.md`](docs/architecture.md).
 
 ## Screenshots
 
-Screenshots will be added after the frontend polish pass. The placeholders below mark the planned README layout.
+### Home
 
-### Screenshot 1: Repository Review Dashboard
+![Home](docs/screenshots/01-home.png)
 
-_Placeholder: main dashboard with readiness score, repository metrics, mentor brief, and checklist inspector._
+### Analysis Pipeline
 
-### Screenshot 2: Prioritized Action Plan
+![Analysis pipeline](docs/screenshots/02-loading.png)
 
-_Placeholder: action plan view showing what to fix next, why it matters, and how it improves resume value._
+### Overview — Readiness Score and Resume Bullets
 
-### Screenshot 3: AI Mentor Feedback
+![Overview](docs/screenshots/03-overview.png)
 
-_Placeholder: AI mentor view with resume bullets and interview preparation questions._
+### Interview Coach — STAR Framework
+
+![Interview Coach](docs/screenshots/04-interview-coach.png)
+
+### Action Plan
+
+![Action Plan](docs/screenshots/05-action-plan.png)
+
+### Readiness Rubric
+
+![Rubric](docs/screenshots/06-rubric.png)
 
 ## Local Setup
 
