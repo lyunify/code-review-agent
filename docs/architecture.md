@@ -4,7 +4,7 @@
 
 ## Backend
 
-The FastAPI backend accepts analysis requests, clones public repositories, runs static analysis, calculates resume readiness, saves a compact history record in SQLite, and returns structured JSON. The API layer stays thin; core behavior lives in services so it can be tested without HTTP.
+The FastAPI backend accepts analysis requests, clones public repositories, runs static analysis, enriches results with GitHub API metadata, calculates resume readiness, saves a compact history record in SQLite, and returns structured JSON. The API layer stays thin; core behavior lives in services so it can be tested without HTTP.
 
 ## Frontend
 
@@ -14,6 +14,7 @@ The React frontend is the primary portfolio demo. It calls the backend API, then
 
 - `repo_loader`: gets source code onto disk.
 - `analyzer`: inspects files and computes metrics.
+- `github_metadata`: fetches public repository metadata such as description, topics, license, homepage, and fork status.
 - `readiness`: calculates a resume readiness score, checklist, and priority fixes using documentation, testing, dependency, structure, and risk-density signals.
 - `mentor_agent`: generates OpenAI-backed mentor feedback when an API key is configured, with a rule-based fallback for local demos and tests.
 - `report_generator`: turns metrics into user-facing interpretation.

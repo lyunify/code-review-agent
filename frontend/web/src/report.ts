@@ -20,6 +20,7 @@ export function generateMarkdownReport(result: AnalyzeResponse): string {
   const risks = result.analysis.risks.length
     ? result.analysis.risks.map((risk) => `- ${risk.severity}: ${risk.message}${risk.path ? ` (${risk.path})` : ''}`).join('\n')
     : '- No risk signals found.'
+  const topics = result.github_metadata.topics.length ? result.github_metadata.topics.join(', ') : 'None'
 
   return `# Repository Readiness Report
 
@@ -54,6 +55,15 @@ ${checklist}
 ## Technical Summary
 
 ${result.report.summary}
+
+## GitHub Profile Signals
+
+- Description: ${result.github_metadata.description ? 'Present' : 'Missing'}
+- License: ${result.github_metadata.license_spdx_id ?? 'Missing'}
+- Topics: ${topics}
+- Homepage: ${result.github_metadata.has_homepage ? 'Present' : 'Missing'}
+- Fork: ${result.github_metadata.is_fork ? 'Yes' : 'No'}
+- Default branch: ${result.github_metadata.default_branch ?? 'Unknown'}
 
 ## Risk Signals
 

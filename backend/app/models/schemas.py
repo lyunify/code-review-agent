@@ -38,6 +38,26 @@ class RepositoryAnalysis(BaseModel):
     has_frontend_backend_structure: bool = False
 
 
+class GitHubMetadata(BaseModel):
+    available: bool
+    full_name: str
+    description: str | None = None
+    topics: list[str] = Field(default_factory=list)
+    license_name: str | None = None
+    license_spdx_id: str | None = None
+    stars: int = 0
+    forks: int = 0
+    open_issues: int = 0
+    default_branch: str | None = None
+    homepage: str | None = None
+    has_homepage: bool = False
+    is_archived: bool = False
+    is_fork: bool = False
+    created_at: str | None = None
+    updated_at: str | None = None
+    pushed_at: str | None = None
+
+
 class ReadinessChecklistItem(BaseModel):
     name: str
     passed: bool
@@ -79,6 +99,7 @@ class ActionPlan(BaseModel):
 class AnalyzeResponse(BaseModel):
     repo_url: str
     analysis: RepositoryAnalysis
+    github_metadata: GitHubMetadata
     report: ReviewReport
     readiness: ResumeReadiness
     mentor_feedback: MentorFeedback
@@ -105,6 +126,7 @@ class AnalysisHistoryDetail(BaseModel):
     repo_url: str
     created_at: str
     analysis: RepositoryAnalysis
+    github_metadata: GitHubMetadata
     report: ReviewReport
     readiness: ResumeReadiness
     mentor_feedback: MentorFeedback

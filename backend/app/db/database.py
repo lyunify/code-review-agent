@@ -8,6 +8,7 @@ from app.models.schemas import (
     AnalysisHistoryRecord,
     ActionPlan,
     MentorFeedback,
+    GitHubMetadata,
     RepositoryAnalysis,
     ResumeReadiness,
     ReviewReport,
@@ -27,6 +28,7 @@ class AnalysisHistoryStore:
         readiness: ResumeReadiness,
         mentor_feedback: MentorFeedback,
         action_plan: ActionPlan,
+        github_metadata: GitHubMetadata,
     ) -> AnalysisHistoryRecord:
         created_at = datetime.now(UTC).isoformat()
         with self._connect() as connection:
@@ -44,9 +46,10 @@ class AnalysisHistoryStore:
                     report_json,
                     readiness_json,
                     mentor_feedback_json,
-                    action_plan_json
+                    action_plan_json,
+                    github_metadata_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     repo_url,
@@ -61,6 +64,7 @@ class AnalysisHistoryStore:
                     readiness.model_dump_json(),
                     mentor_feedback.model_dump_json(),
                     action_plan.model_dump_json(),
+                    github_metadata.model_dump_json(),
                 ),
             )
             connection.commit()
@@ -123,7 +127,8 @@ class AnalysisHistoryStore:
                     report_json,
                     readiness_json,
                     mentor_feedback_json,
-                    action_plan_json
+                    action_plan_json,
+                    github_metadata_json
                 FROM analysis_history
                 WHERE id = ?
                 """,
@@ -135,6 +140,7 @@ class AnalysisHistoryStore:
             or row["readiness_json"] is None
             or row["mentor_feedback_json"] is None
             or row["action_plan_json"] is None
+            or row["github_metadata_json"] is None
         ):
             return None
 
@@ -143,6 +149,7 @@ class AnalysisHistoryStore:
             repo_url=row["repo_url"],
             created_at=row["created_at"],
             analysis=RepositoryAnalysis.model_validate_json(row["analysis_json"]),
+            github_metadata=GitHubMetadata.model_validate_json(row["github_metadata_json"]),
             report=ReviewReport.model_validate_json(row["report_json"]),
             readiness=ResumeReadiness.model_validate_json(row["readiness_json"]),
             mentor_feedback=MentorFeedback.model_validate_json(row["mentor_feedback_json"]),
@@ -167,7 +174,8 @@ class AnalysisHistoryStore:
                     report_json TEXT NOT NULL,
                     readiness_json TEXT,
                     mentor_feedback_json TEXT,
-                    action_plan_json TEXT
+                    action_plan_json TEXT,
+                    github_metadata_json TEXT
                 )
                 """
             )
@@ -181,6 +189,8 @@ class AnalysisHistoryStore:
                 connection.execute("ALTER TABLE analysis_history ADD COLUMN mentor_feedback_json TEXT")
             if "action_plan_json" not in existing_columns:
                 connection.execute("ALTER TABLE analysis_history ADD COLUMN action_plan_json TEXT")
+            if "github_metadata_json" not in existing_columns:
+                connection.execute("ALTER TABLE analysis_history ADD COLUMN github_metadata_json TEXT")
             connection.commit()
 
     def _connect(self) -> sqlite3.Connection:

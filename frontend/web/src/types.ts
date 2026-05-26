@@ -19,6 +19,26 @@ export type RepositoryAnalysis = {
   risks: RiskSignal[]
 }
 
+export type GitHubMetadata = {
+  available: boolean
+  full_name: string
+  description: string | null
+  topics: string[]
+  license_name: string | null
+  license_spdx_id: string | null
+  stars: number
+  forks: number
+  open_issues: number
+  default_branch: string | null
+  homepage: string | null
+  has_homepage: boolean
+  is_archived: boolean
+  is_fork: boolean
+  created_at: string | null
+  updated_at: string | null
+  pushed_at: string | null
+}
+
 export type ReadinessChecklistItem = {
   name: string
   passed: boolean
@@ -60,6 +80,7 @@ export type ActionPlan = {
 export type AnalyzeResponse = {
   repo_url: string
   analysis: RepositoryAnalysis
+  github_metadata: GitHubMetadata
   readiness: ResumeReadiness
   report: ReviewReport
   mentor_feedback: MentorFeedback

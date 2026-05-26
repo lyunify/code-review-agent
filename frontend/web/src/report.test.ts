@@ -11,6 +11,25 @@ const result: AnalyzeResponse = {
     largest_files: [],
     risks: [{ severity: 'medium', message: 'Long file detected (350 lines).', path: 'app.py' }],
   },
+  github_metadata: {
+    available: true,
+    full_name: 'lyunify/code-review-agent',
+    description: 'Repository readiness tool',
+    topics: ['fastapi', 'react'],
+    license_name: 'MIT License',
+    license_spdx_id: 'MIT',
+    stars: 0,
+    forks: 0,
+    open_issues: 0,
+    default_branch: 'main',
+    homepage: null,
+    has_homepage: false,
+    is_archived: false,
+    is_fork: false,
+    created_at: '2026-05-25T00:00:00Z',
+    updated_at: '2026-05-25T00:00:00Z',
+    pushed_at: '2026-05-25T00:00:00Z',
+  },
   readiness: {
     score: 82,
     status: 'Almost ready',
@@ -62,6 +81,8 @@ describe('generateMarkdownReport', () => {
     expect(report).toContain('This project is close to resume-ready.')
     expect(report).toContain('## Action Plan')
     expect(report).toContain('Add automated tests')
+    expect(report).toContain('## GitHub Profile Signals')
+    expect(report).toContain('- License: MIT')
     expect(report).toContain('- [x] README exists')
     expect(report).toContain('- [ ] Automated tests exist')
     expect(report).toContain('Long file detected')

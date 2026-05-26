@@ -14,6 +14,7 @@ Students often know how to build class projects, but it is harder to judge wheth
 - Frontend: React, TypeScript, Vite
 - Data storage: SQLite
 - AI feedback: OpenAI API with rule-based fallback
+- Repository metadata: GitHub REST API
 - Legacy prototype: Streamlit
 - Core logic: Python services
 - Tests and CI: pytest, Vitest, GitHub Actions
@@ -46,6 +47,7 @@ More details are available in [`docs/architecture.md`](docs/architecture.md).
 - Inspect repository structure, languages, file counts, largest files, and risk signals.
 - Evaluate README quality, setup instructions, usage notes, tech stack documentation, and demo assets.
 - Detect project hygiene signals such as tests, dependency files, docs, `.gitignore`, and `.env.example`.
+- Enrich analysis with GitHub metadata such as repository description, topics, license, homepage, and fork status.
 - Generate prioritized action plans that explain what to fix, why it matters, and how it improves resume value.
 - Produce AI mentor feedback with resume bullets, interview questions, and next steps.
 - Save analysis history in SQLite and reopen saved reports from the dashboard.
@@ -56,10 +58,11 @@ More details are available in [`docs/architecture.md`](docs/architecture.md).
 1. A user enters a public GitHub repository URL.
 2. The backend clones the repository into a temporary local workspace.
 3. Static analysis inspects files, directories, languages, README quality, tests, dependency manifests, docs, and risk signals.
-4. The readiness service calculates a resume-readiness score from deterministic checklist rules.
-5. The action plan service converts missing signals into prioritized improvement tasks.
-6. The mentor agent generates resume bullets, interview questions, and next steps using OpenAI when configured, with a local fallback for reliable demos.
-7. The result is saved to SQLite so previous reports can be reopened from the dashboard.
+4. GitHub metadata lookup enriches the report with public profile signals such as description, license, topics, homepage, and fork status.
+5. The readiness service calculates a resume-readiness score from deterministic checklist rules.
+6. The action plan service converts missing signals into prioritized improvement tasks.
+7. The mentor agent generates resume bullets, interview questions, and next steps using OpenAI when configured, with a local fallback for reliable demos.
+8. The result is saved to SQLite so previous reports can be reopened from the dashboard.
 
 ## Screenshots
 
@@ -162,6 +165,7 @@ cd frontend
 
 - The backend keeps HTTP route handlers thin and places business logic in testable service modules.
 - The readiness score is deterministic so results are explainable and repeatable.
+- GitHub metadata is treated as enrichment data; lookup failures fall back gracefully instead of failing the full analysis.
 - AI feedback is treated as an enhancement, not a hard dependency; local fallback logic keeps the app usable without an API key.
 - The React frontend is split into typed components for dashboard, rubric, action plan, mentor feedback, loading state, and sidebar navigation.
 - Demo mode provides a stable offline result for presentations and future screenshots.
@@ -171,6 +175,10 @@ cd frontend
 
 - Replace screenshot placeholders with polished dashboard, action plan, and mentor view screenshots.
 - Deploy the React frontend and FastAPI backend for public demos.
-- Add GitHub API support for richer metadata such as stars, commit history, and repository topics.
+- Expand GitHub API support with commit activity, pull request history, and repository health signals.
 - Add per-user saved reports and authentication.
 - Support private repositories through secure GitHub OAuth.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

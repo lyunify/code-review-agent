@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.db.database import AnalysisHistoryStore
 from app.main import app
+from app.models.schemas import GitHubMetadata
 
 
 def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
@@ -37,6 +38,10 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
         return repo_dir
 
     monkeypatch.setattr("app.api.routes.clone_repository", fake_clone_repository)
+    monkeypatch.setattr(
+        "app.api.routes.fetch_github_metadata",
+        lambda repo_url: GitHubMetadata(available=True, full_name="example/demo", license_spdx_id="MIT"),
+    )
     monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
 
     client = TestClient(app)
@@ -52,6 +57,7 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     assert "mentor_summary" in payload["mentor_feedback"]
     assert len(payload["mentor_feedback"]["resume_bullets"]) == 3
     assert len(payload["action_plan"]["items"]) >= 1
+    assert payload["github_metadata"]["license_spdx_id"] == "MIT"
 
 
 def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) -> None:
@@ -64,6 +70,10 @@ def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) ->
         return repo_dir
 
     monkeypatch.setattr("app.api.routes.clone_repository", fake_clone_repository)
+    monkeypatch.setattr(
+        "app.api.routes.fetch_github_metadata",
+        lambda repo_url: GitHubMetadata(available=True, full_name="example/demo"),
+    )
     monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
 
     client = TestClient(app)
@@ -94,6 +104,10 @@ def test_history_detail_endpoint_returns_full_saved_report(monkeypatch, tmp_path
         return repo_dir
 
     monkeypatch.setattr("app.api.routes.clone_repository", fake_clone_repository)
+    monkeypatch.setattr(
+        "app.api.routes.fetch_github_metadata",
+        lambda repo_url: GitHubMetadata(available=True, full_name="example/demo", topics=["fastapi"]),
+    )
     monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
 
     client = TestClient(app)
@@ -111,6 +125,7 @@ def test_history_detail_endpoint_returns_full_saved_report(monkeypatch, tmp_path
     assert payload["readiness"]["score"] > 0
     assert "mentor_summary" in payload["mentor_feedback"]
     assert len(payload["action_plan"]["items"]) >= 1
+    assert payload["github_metadata"]["topics"] == ["fastapi"]
 
 
 def test_history_detail_endpoint_returns_404_for_missing_record(monkeypatch, tmp_path: Path) -> None:

@@ -4,6 +4,7 @@ from app.db.database import AnalysisHistoryStore
 from app.models.schemas import (
     ActionPlan,
     ActionPlanItem,
+    GitHubMetadata,
     MentorFeedback,
     ReadinessChecklistItem,
     RepositoryAnalysis,
@@ -57,6 +58,13 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
             )
         ]
     )
+    github_metadata = GitHubMetadata(
+        available=True,
+        full_name="example/demo",
+        description="Demo repository",
+        topics=["python"],
+        license_spdx_id="MIT",
+    )
 
     saved = store.save_analysis(
         repo_url="https://github.com/example/demo",
@@ -65,6 +73,7 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
         readiness=readiness,
         mentor_feedback=mentor_feedback,
         action_plan=action_plan,
+        github_metadata=github_metadata,
     )
     records = store.list_recent(limit=5)
     detail = store.get_analysis(saved.id)
@@ -81,3 +90,5 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
     assert detail.readiness.score == 90
     assert detail.mentor_feedback.resume_bullets == ["Built a Python repository analyzer."]
     assert detail.action_plan.items[0].title == "Add screenshots"
+    assert detail.github_metadata.full_name == "example/demo"
+    assert detail.github_metadata.license_spdx_id == "MIT"

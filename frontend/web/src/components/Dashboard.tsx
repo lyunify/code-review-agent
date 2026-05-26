@@ -93,6 +93,28 @@ export function Dashboard({
             ))}
           </div>
         </section>
+
+        <section className="panel">
+          <div className="panel-heading">
+            <Layers3 size={19} />
+            <h3>GitHub Profile Signals</h3>
+          </div>
+          <div className="metadata-grid">
+            <MetadataItem label="Description" value={result.github_metadata.description ? 'Present' : 'Missing'} />
+            <MetadataItem label="License" value={result.github_metadata.license_spdx_id ?? 'Missing'} />
+            <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
+            <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
+            <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
+            <MetadataItem label="Default branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
+          </div>
+          {result.github_metadata.topics.length > 0 && (
+            <div className="topic-list">
+              {result.github_metadata.topics.map((topic) => (
+                <span key={topic}>{topic}</span>
+              ))}
+            </div>
+          )}
+        </section>
       </section>
 
       <aside className="inspector-column">
@@ -126,6 +148,15 @@ export function Dashboard({
           ))}
         </section>
       </aside>
+    </div>
+  )
+}
+
+function MetadataItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="metadata-item">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   )
 }
