@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.venv/
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+tmp/
+cloned_repos/

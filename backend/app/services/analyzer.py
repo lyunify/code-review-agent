@@ -1,0 +1,136 @@
+from collections import Counter
+from pathlib import Path
+
+from app.core.config import (
+    LANGUAGE_BY_EXTENSION,
+    LONG_FILE_LINE_THRESHOLD,
+    MAX_FILE_BYTES_TO_READ,
+    MAX_LARGEST_FILES,
+    is_ignored_path,
+)
+from app.models.schemas import FileMetric, RepositoryAnalysis, RiskSignal
+
+
+def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
+    root = Path(repo_path)
+    if not root.exists() or not root.is_dir():
+        raise ValueError(f"Repository path does not exist or is not a directory: {root}")
+
+    files: list[FileMetric] = []
+    languages: Counter[str] = Counter()
+    directory_paths: set[Path] = set()
+    has_readme = False
+    has_tests = False
+
+    for path in root.rglob("*"):
+        relative_path = path.relative_to(root)
+        if is_ignored_path(relative_path):
+            continue
+
+        if path.is_dir():
+            directory_paths.add(relative_path)
+            if _looks_like_test_path(relative_path):
+                has_tests = True
+            continue
+
+        if not path.is_file():
+            continue
+
+        language = _detect_language(path)
+        line_count = _count_lines(path)
+        size_bytes = path.stat().st_size
+        file_metric = FileMetric(
+            path=relative_path.as_posix(),
+            size_bytes=size_bytes,
+            lines=line_count,
+            language=language,
+        )
+        files.append(file_metric)
+        languages[language] += 1
+
+        if _looks_like_readme(path.name):
+            has_readme = True
+        if _looks_like_test_path(relative_path):
+            has_tests = True
+
+    largest_files = sorted(files, key=lambda file: file.size_bytes, reverse=True)[:MAX_LARGEST_FILES]
+    risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
+
+    return RepositoryAnalysis(
+        total_files=len(files),
+        total_directories=len(directory_paths),
+        languages=dict(sorted(languages.items())),
+        largest_files=largest_files,
+        risks=risks,
+        has_readme=has_readme,
+        has_tests=has_tests,
+    )
+
+
+def _detect_language(path: Path) -> str:
+    return LANGUAGE_BY_EXTENSION.get(path.suffix.lower(), "Other")
+
+
+def _count_lines(path: Path) -> int:
+    if path.stat().st_size > MAX_FILE_BYTES_TO_READ:
+        return 0
+
+    try:
+        return len(path.read_text(encoding="utf-8", errors="ignore").splitlines())
+    except OSError:
+        return 0
+
+
+def _looks_like_readme(file_name: str) -> bool:
+    return file_name.lower().startswith("readme")
+
+
+def _looks_like_test_path(relative_path: Path) -> bool:
+    parts = {part.lower() for part in relative_path.parts}
+    name = relative_path.name.lower()
+    return (
+        "test" in parts
+        or "tests" in parts
+        or name.startswith("test_")
+        or name.endswith("_test.py")
+        or name.endswith(".test.js")
+        or name.endswith(".spec.js")
+        or name.endswith(".test.ts")
+        or name.endswith(".spec.ts")
+    )
+
+
+def _build_risks(
+    files: list[FileMetric],
+    has_readme: bool,
+    has_tests: bool,
+) -> list[RiskSignal]:
+    risks: list[RiskSignal] = []
+
+    if not has_readme:
+        risks.append(
+            RiskSignal(
+                severity="medium",
+                message="Repository does not contain a README file.",
+            )
+        )
+
+    if not has_tests:
+        risks.append(
+            RiskSignal(
+                severity="high",
+                message="Repository does not appear to contain tests.",
+            )
+        )
+
+    for file in files:
+        if file.lines > LONG_FILE_LINE_THRESHOLD:
+            risks.append(
+                RiskSignal(
+                    severity="medium",
+                    message=f"Long file detected ({file.lines} lines).",
+                    path=file.path,
+                )
+            )
+
+    return risks
