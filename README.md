@@ -47,6 +47,7 @@ More details are available in [`docs/architecture.md`](docs/architecture.md).
 - Inspect repository structure, languages, file counts, largest files, and risk signals.
 - Evaluate README quality, setup instructions, usage notes, tech stack documentation, and demo assets.
 - Detect project hygiene signals such as tests, dependency files, docs, `.gitignore`, and `.env.example`.
+- Detect production-readiness signals such as CI workflows, license files, deployment config, API docs, and frontend/backend integration.
 - Enrich analysis with GitHub metadata such as repository description, topics, license, homepage, and fork status.
 - Generate prioritized action plans that explain what to fix, why it matters, and how it improves resume value.
 - Produce AI mentor feedback with resume bullets, interview questions, and next steps.

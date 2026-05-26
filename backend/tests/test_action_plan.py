@@ -22,6 +22,11 @@ def test_action_plan_turns_failed_readiness_items_into_student_fixes() -> None:
         has_dependency_file=True,
         has_docs=False,
         has_frontend_backend_structure=False,
+        has_license=False,
+        has_ci_config=False,
+        has_deployment_config=False,
+        has_api_documentation=False,
+        has_frontend_backend_integration=False,
     )
     readiness = calculate_readiness(analysis)
 
@@ -33,6 +38,7 @@ def test_action_plan_turns_failed_readiness_items_into_student_fixes() -> None:
     assert "core workflow" in action_plan.items[0].how_to_improve
     assert action_plan.items[0].resume_impact == "Shows engineering discipline and reduces the project looking like a one-off demo."
     assert action_plan.items[1].title == "Document local setup"
+    assert any(item.title == "Add a CI workflow" for item in action_plan.items)
 
 
 def test_action_plan_gives_launch_polish_for_resume_ready_project() -> None:
@@ -54,6 +60,11 @@ def test_action_plan_gives_launch_polish_for_resume_ready_project() -> None:
         has_dependency_file=True,
         has_docs=True,
         has_frontend_backend_structure=True,
+        has_license=True,
+        has_ci_config=True,
+        has_deployment_config=True,
+        has_api_documentation=True,
+        has_frontend_backend_integration=True,
     )
     readiness = calculate_readiness(analysis)
 

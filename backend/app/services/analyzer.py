@@ -30,6 +30,11 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     readme_has_demo_assets = False
     has_dependency_file = False
     has_docs = False
+    has_license = False
+    has_ci_config = False
+    has_deployment_config = False
+    has_api_documentation = False
+    has_frontend_backend_integration = False
     top_level_directories: set[str] = set()
 
     for path in root.rglob("*"):
@@ -74,10 +79,21 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
             has_gitignore = True
         if path.name in {".env.example", ".env.sample", "env.example"}:
             has_env_example = True
+        if _looks_like_license_file(path.name):
+            has_license = True
+        if _looks_like_ci_config(relative_path):
+            has_ci_config = True
+        if _looks_like_deployment_config(relative_path):
+            has_deployment_config = True
         if _looks_like_dependency_file(path.name):
             has_dependency_file = True
         if relative_path.parts and relative_path.parts[0].lower() == "docs":
             has_docs = True
+        file_text = _read_small_text_file(path)
+        if _contains_api_documentation(file_text):
+            has_api_documentation = True
+        if _looks_like_frontend_backend_integration(relative_path, file_text):
+            has_frontend_backend_integration = True
 
     largest_files = sorted(files, key=lambda file: file.size_bytes, reverse=True)[:MAX_LARGEST_FILES]
     risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
@@ -101,6 +117,11 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
         has_dependency_file=has_dependency_file,
         has_docs=has_docs,
         has_frontend_backend_structure=has_frontend_backend_structure,
+        has_license=has_license,
+        has_ci_config=has_ci_config,
+        has_deployment_config=has_deployment_config,
+        has_api_documentation=has_api_documentation,
+        has_frontend_backend_integration=has_frontend_backend_integration,
     )
 
 
@@ -218,6 +239,69 @@ def _looks_like_dependency_file(file_name: str) -> bool:
         "build.gradle",
         "cargo.toml",
     }
+
+
+def _looks_like_license_file(file_name: str) -> bool:
+    normalized = file_name.lower()
+    return normalized in {"license", "license.md", "license.txt", "copying"}
+
+
+def _looks_like_ci_config(relative_path: Path) -> bool:
+    parts = [part.lower() for part in relative_path.parts]
+    name = relative_path.name.lower()
+    return (
+        len(parts) >= 3
+        and parts[0] == ".github"
+        and parts[1] == "workflows"
+        and name.endswith((".yml", ".yaml"))
+    ) or name in {".travis.yml", "circle.yml", "azure-pipelines.yml"}
+
+
+def _looks_like_deployment_config(relative_path: Path) -> bool:
+    name = relative_path.name.lower()
+    return name in {
+        "dockerfile",
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "procfile",
+        "vercel.json",
+        "netlify.toml",
+        "render.yaml",
+        "render.yml",
+        "railway.json",
+    }
+
+
+def _contains_api_documentation(text: str) -> bool:
+    api_markers = [
+        "/api/",
+        "api endpoint",
+        "api endpoints",
+        "openapi",
+        "swagger",
+        "curl ",
+        "post /",
+        "get /",
+        "fastapi",
+    ]
+    return any(marker in text for marker in api_markers)
+
+
+def _looks_like_frontend_backend_integration(relative_path: Path, text: str) -> bool:
+    parts = [part.lower() for part in relative_path.parts]
+    if "frontend" not in parts and "web" not in parts:
+        return False
+
+    integration_markers = [
+        "fetch(",
+        "axios.",
+        "/api/",
+        "vite_api_base_url",
+        "api_base_url",
+        "127.0.0.1:8000",
+        "localhost:8000",
+    ]
+    return any(marker in text for marker in integration_markers)
 
 
 def _looks_like_test_path(relative_path: Path) -> bool:

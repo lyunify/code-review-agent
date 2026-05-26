@@ -4,7 +4,7 @@ from app.models.schemas import ReadinessChecklistItem, RepositoryAnalysis, Resum
 def calculate_readiness(analysis: RepositoryAnalysis) -> ResumeReadiness:
     long_file_count = sum(1 for risk in analysis.risks if "Long file detected" in risk.message)
     risk_density = len(analysis.risks) / max(analysis.total_files, 1)
-    checklist = [
+    base_checklist = [
         ReadinessChecklistItem(
             name="README exists",
             passed=analysis.has_readme,
@@ -96,6 +96,39 @@ def calculate_readiness(analysis: RepositoryAnalysis) -> ResumeReadiness:
             recommendation="Use clear top-level boundaries such as frontend/ and backend/ when the project is full-stack.",
         ),
     ]
+    production_checklist = [
+        ReadinessChecklistItem(
+            name="License file exists",
+            passed=analysis.has_license,
+            points=0,
+            recommendation="Add a LICENSE file so the repository has clear usage terms.",
+        ),
+        ReadinessChecklistItem(
+            name="CI workflow exists",
+            passed=analysis.has_ci_config,
+            points=0,
+            recommendation="Add GitHub Actions or another CI workflow to run tests automatically.",
+        ),
+        ReadinessChecklistItem(
+            name="Deployment configuration exists",
+            passed=analysis.has_deployment_config,
+            points=0,
+            recommendation="Add Docker, Render, Vercel, or another deployment configuration when the project is meant to be demoed.",
+        ),
+        ReadinessChecklistItem(
+            name="API documentation exists",
+            passed=analysis.has_api_documentation,
+            points=0,
+            recommendation="Document API endpoints with examples so full-stack behavior is easier to evaluate.",
+        ),
+        ReadinessChecklistItem(
+            name="Frontend calls backend API",
+            passed=analysis.has_frontend_backend_integration,
+            points=0,
+            recommendation="Connect the frontend to backend API endpoints instead of leaving the layers isolated.",
+        ),
+    ]
+    checklist = base_checklist + production_checklist
 
     score = sum(item.points for item in checklist if item.passed)
     failed_items = [item for item in checklist if not item.passed]
@@ -132,6 +165,11 @@ def _prioritize_fixes(failed_items: list[ReadinessChecklistItem]) -> list[str]:
         "README lists tech stack",
         "README includes screenshots or demo assets",
         "Dependency file exists",
+        "License file exists",
+        "CI workflow exists",
+        "API documentation exists",
+        "Frontend calls backend API",
+        "Deployment configuration exists",
         ".env.example exists",
         ".gitignore exists",
         "Architecture docs exist",

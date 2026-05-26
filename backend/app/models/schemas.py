@@ -36,6 +36,11 @@ class RepositoryAnalysis(BaseModel):
     has_dependency_file: bool = False
     has_docs: bool = False
     has_frontend_backend_structure: bool = False
+    has_license: bool = False
+    has_ci_config: bool = False
+    has_deployment_config: bool = False
+    has_api_documentation: bool = False
+    has_frontend_backend_integration: bool = False
 
 
 class GitHubMetadata(BaseModel):

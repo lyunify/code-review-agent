@@ -21,6 +21,11 @@ def test_readiness_score_rewards_resume_ready_project() -> None:
         has_dependency_file=True,
         has_docs=True,
         has_frontend_backend_structure=True,
+        has_license=True,
+        has_ci_config=True,
+        has_deployment_config=True,
+        has_api_documentation=True,
+        has_frontend_backend_integration=True,
     )
 
     readiness = calculate_readiness(analysis)
@@ -54,6 +59,11 @@ def test_readiness_score_prioritizes_missing_project_hygiene() -> None:
         has_dependency_file=False,
         has_docs=False,
         has_frontend_backend_structure=False,
+        has_license=False,
+        has_ci_config=False,
+        has_deployment_config=False,
+        has_api_documentation=False,
+        has_frontend_backend_integration=False,
     )
 
     readiness = calculate_readiness(analysis)
@@ -63,6 +73,8 @@ def test_readiness_score_prioritizes_missing_project_hygiene() -> None:
     assert readiness.status == "Needs work"
     assert checklist["README exists"].passed is False
     assert checklist["Automated tests exist"].passed is False
+    assert checklist["CI workflow exists"].passed is False
+    assert checklist["License file exists"].passed is False
     assert checklist["No long files detected"].passed is False
     assert readiness.priority_fixes[:3] == [
         "Add automated tests for the core project workflow.",
@@ -94,6 +106,11 @@ def test_readiness_score_penalizes_high_risk_density() -> None:
         has_dependency_file=True,
         has_docs=True,
         has_frontend_backend_structure=True,
+        has_license=True,
+        has_ci_config=True,
+        has_deployment_config=True,
+        has_api_documentation=True,
+        has_frontend_backend_integration=True,
     )
 
     readiness = calculate_readiness(analysis)
