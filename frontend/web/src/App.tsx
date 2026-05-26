@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { analyzeRepository, fetchHistory, fetchHistoryRecord, getFriendlyErrorMessage } from './api'
+import { getDemoAnalysisResult } from './demoData'
 import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse, HistoryRecord, ReadinessChecklistItem } from './types'
 
@@ -59,7 +60,12 @@ function App() {
   }
 
   function handleTrySampleRepo() {
-    void handleAnalyze(SAMPLE_REPO_URL)
+    const demoResult = getDemoAnalysisResult()
+    setRepoUrl(demoResult.repo_url)
+    setResult(demoResult)
+    setActiveView('dashboard')
+    setActiveTab('resume')
+    setError(null)
   }
 
   async function handleSelectHistory(record: HistoryRecord) {
@@ -90,7 +96,7 @@ function App() {
       <section className="workbench">
         <header className="command-bar">
           <div>
-            <p className="eyebrow">Resume readiness workspace</p>
+            <p className="eyebrow">Intern project readiness</p>
             <h1>Repository Review</h1>
           </div>
           <div className="repo-command">
@@ -383,6 +389,7 @@ function Dashboard({
           <div>
             <p className="eyebrow">Generated report</p>
             <h2>{result.repo_url.replace('https://github.com/', '')}</h2>
+            <p className="repo-subtitle">Static scan, resume rubric, saved report, and AI mentor output.</p>
           </div>
           <div className="report-actions">
             <button className="download-button" onClick={handleDownloadReport}>
@@ -607,7 +614,7 @@ function EmptyWorkbench({
         <div className="empty-actions">
           <button onClick={onTrySampleRepo}>
             <Github size={17} />
-            Try sample repo
+            View demo result
           </button>
         </div>
         <div className="empty-feature-grid">
