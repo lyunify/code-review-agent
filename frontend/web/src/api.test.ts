@@ -155,7 +155,7 @@ describe('fetchHistory', () => {
 describe('getFriendlyErrorMessage', () => {
   it('explains backend connectivity failures', () => {
     expect(getFriendlyErrorMessage('Failed to fetch')).toBe(
-      'Cannot reach the backend API. Make sure FastAPI is running on http://127.0.0.1:8000.',
+      'Cannot reach the backend API. Please try again in a moment — the server may be starting up.',
     )
   })
 
