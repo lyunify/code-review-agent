@@ -62,7 +62,7 @@ export async function fetchHistoryRecord(recordId: number): Promise<HistoryDetai
 export function getFriendlyErrorMessage(message: string): string {
   const normalized = message.toLowerCase()
   if (normalized.includes('failed to fetch') || normalized.includes('networkerror')) {
-    return 'Cannot reach the backend API. Make sure FastAPI is running on http://127.0.0.1:8000.'
+    return 'Cannot reach the backend API. Please try again in a moment — the server may be starting up.'
   }
   if (normalized.includes('valid url') || normalized.includes('url scheme')) {
     return 'Enter a public GitHub repository URL, for example https://github.com/owner/project.'
