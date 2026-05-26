@@ -1,42 +1,73 @@
 import type { AnalyzeResponse } from '../types'
 
 export function MentorView({ result }: { result: AnalyzeResponse }) {
+  const repoShort = result.repo_url.replace('https://github.com/', '')
+
   return (
     <section className="single-view">
       <div className="view-header">
-        <p className="view-header-eyebrow">AI Mentor</p>
+        <p className="view-header-eyebrow">Interview Coach</p>
         <div className="view-header-row">
-          <h2 className="view-header-title">Turn this repo into an interview story.</h2>
+          <h2 className="view-header-title">Practice talking about this project.</h2>
         </div>
       </div>
 
-      <section className="panel">
-        <p className="mentor-pull-quote">{result.mentor_feedback.mentor_summary}</p>
-      </section>
+      {/* Coach's assessment — compact, not the focus */}
+      <div className="coach-assessment">
+        <span className="coach-label">Mentor's take</span>
+        <p>{result.mentor_feedback.mentor_summary}</p>
+      </div>
 
+      {/* Talking points — resume bullets as ammo for all answers */}
       <section className="panel">
-        <p className="panel-eyebrow" style={{ marginBottom: 16 }}>Resume Bullets</p>
+        <p className="panel-eyebrow" style={{ marginBottom: 14 }}>Your strongest talking points</p>
         <div className="bullet-list">
-          {result.mentor_feedback.resume_bullets.map((bullet, index) => (
+          {result.mentor_feedback.resume_bullets.map((bullet, i) => (
             <div className="bullet-item" key={bullet}>
-              <span className="bullet-num">{String(index + 1).padStart(2, '0')}</span>
+              <span className="bullet-num">{String(i + 1).padStart(2, '0')}</span>
               <p className="bullet-text">{bullet}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="panel">
-        <p className="panel-eyebrow" style={{ marginBottom: 16 }}>Interview Questions</p>
-        <div className="bullet-list">
-          {result.mentor_feedback.interview_questions.map((question, index) => (
-            <div className="bullet-item" key={question}>
-              <span className="bullet-num">Q{index + 1}</span>
-              <p className="bullet-text">{question}</p>
+      {/* Interview questions with STAR framework */}
+      <p className="panel-eyebrow" style={{ marginBottom: 12 }}>
+        {result.mentor_feedback.interview_questions.length} likely interview questions
+      </p>
+
+      <div className="interview-cards">
+        {result.mentor_feedback.interview_questions.map((question, i) => (
+          <article className="interview-card" key={question}>
+            <div className="interview-card-q">
+              <span className="interview-q-num">Q{i + 1}</span>
+              <p className="interview-q-text">{question}</p>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="star-grid">
+              <div className="star-row">
+                <span className="star-label">Situation</span>
+                <p className="star-hint">
+                  Set the scene: "I built <em>{repoShort}</em> to solve…" — give context in one sentence.
+                </p>
+              </div>
+              <div className="star-row">
+                <span className="star-label">Task</span>
+                <p className="star-hint">What were you specifically responsible for on this project?</p>
+              </div>
+              <div className="star-row">
+                <span className="star-label">Action</span>
+                <p className="star-hint">
+                  Draw from your talking points above — pick the one most relevant to this question.
+                </p>
+              </div>
+              <div className="star-row">
+                <span className="star-label">Result</span>
+                <p className="star-hint">What did you ship, learn, or improve? Quantify if you can.</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
   )
 }
