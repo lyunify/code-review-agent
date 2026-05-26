@@ -14,7 +14,7 @@ The Streamlit frontend is a lightweight dashboard. It calls the backend API, the
 
 - `repo_loader`: gets source code onto disk.
 - `analyzer`: inspects files and computes metrics.
-- `readiness`: calculates a resume readiness score, checklist, and priority fixes.
+- `readiness`: calculates a resume readiness score, checklist, and priority fixes using documentation, testing, dependency, structure, and risk-density signals.
 - `report_generator`: turns metrics into user-facing interpretation.
 - `db`: stores recent analysis history in SQLite.
 - `routes`: handles HTTP request and response flow.

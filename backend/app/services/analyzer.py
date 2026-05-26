@@ -25,6 +25,12 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     has_env_example = False
     readme_has_setup = False
     readme_has_usage = False
+    readme_has_project_purpose = False
+    readme_has_tech_stack = False
+    readme_has_demo_assets = False
+    has_dependency_file = False
+    has_docs = False
+    top_level_directories: set[str] = set()
 
     for path in root.rglob("*"):
         relative_path = path.relative_to(root)
@@ -33,6 +39,8 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
 
         if path.is_dir():
             directory_paths.add(relative_path)
+            if len(relative_path.parts) == 1:
+                top_level_directories.add(relative_path.parts[0].lower())
             if _looks_like_test_path(relative_path):
                 has_tests = True
             continue
@@ -57,15 +65,23 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
             readme_text = _read_small_text_file(path)
             readme_has_setup = readme_has_setup or _contains_setup_instructions(readme_text)
             readme_has_usage = readme_has_usage or _contains_usage_instructions(readme_text)
+            readme_has_project_purpose = readme_has_project_purpose or _contains_project_purpose(readme_text)
+            readme_has_tech_stack = readme_has_tech_stack or _contains_tech_stack(readme_text)
+            readme_has_demo_assets = readme_has_demo_assets or _contains_demo_assets(readme_text)
         if _looks_like_test_path(relative_path):
             has_tests = True
         if path.name == ".gitignore":
             has_gitignore = True
         if path.name in {".env.example", ".env.sample", "env.example"}:
             has_env_example = True
+        if _looks_like_dependency_file(path.name):
+            has_dependency_file = True
+        if relative_path.parts and relative_path.parts[0].lower() == "docs":
+            has_docs = True
 
     largest_files = sorted(files, key=lambda file: file.size_bytes, reverse=True)[:MAX_LARGEST_FILES]
     risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
+    has_frontend_backend_structure = {"frontend", "backend"}.issubset(top_level_directories)
 
     return RepositoryAnalysis(
         total_files=len(files),
@@ -79,6 +95,12 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
         has_env_example=has_env_example,
         readme_has_setup=readme_has_setup,
         readme_has_usage=readme_has_usage,
+        readme_has_project_purpose=readme_has_project_purpose,
+        readme_has_tech_stack=readme_has_tech_stack,
+        readme_has_demo_assets=readme_has_demo_assets,
+        has_dependency_file=has_dependency_file,
+        has_docs=has_docs,
+        has_frontend_backend_structure=has_frontend_backend_structure,
     )
 
 
@@ -136,6 +158,66 @@ def _contains_usage_instructions(text: str) -> bool:
         "python ",
     ]
     return any(marker in text for marker in usage_markers)
+
+
+def _contains_project_purpose(text: str) -> bool:
+    purpose_markers = [
+        "purpose",
+        "overview",
+        "problem",
+        "helps",
+        "built to",
+        "designed to",
+        "this project",
+        "this app",
+        "this tool",
+    ]
+    return any(marker in text for marker in purpose_markers)
+
+
+def _contains_tech_stack(text: str) -> bool:
+    tech_markers = [
+        "tech stack",
+        "technologies",
+        "built with",
+        "fastapi",
+        "streamlit",
+        "react",
+        "python",
+        "sqlite",
+        "postgres",
+        "typescript",
+    ]
+    return any(marker in text for marker in tech_markers)
+
+
+def _contains_demo_assets(text: str) -> bool:
+    demo_markers = [
+        "screenshot",
+        "screenshots",
+        "demo",
+        "gif",
+        "video",
+        "preview",
+    ]
+    return any(marker in text for marker in demo_markers)
+
+
+def _looks_like_dependency_file(file_name: str) -> bool:
+    return file_name.lower() in {
+        "requirements.txt",
+        "pyproject.toml",
+        "poetry.lock",
+        "pipfile",
+        "package.json",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "go.mod",
+        "pom.xml",
+        "build.gradle",
+        "cargo.toml",
+    }
 
 
 def _looks_like_test_path(relative_path: Path) -> bool:

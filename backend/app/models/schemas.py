@@ -30,6 +30,12 @@ class RepositoryAnalysis(BaseModel):
     has_env_example: bool = False
     readme_has_setup: bool = False
     readme_has_usage: bool = False
+    readme_has_project_purpose: bool = False
+    readme_has_tech_stack: bool = False
+    readme_has_demo_assets: bool = False
+    has_dependency_file: bool = False
+    has_docs: bool = False
+    has_frontend_backend_structure: bool = False
 
 
 class ReadinessChecklistItem(BaseModel):

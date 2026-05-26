@@ -15,6 +15,12 @@ def test_readiness_score_rewards_resume_ready_project() -> None:
         has_env_example=True,
         readme_has_setup=True,
         readme_has_usage=True,
+        readme_has_project_purpose=True,
+        readme_has_tech_stack=True,
+        readme_has_demo_assets=True,
+        has_dependency_file=True,
+        has_docs=True,
+        has_frontend_backend_structure=True,
     )
 
     readiness = calculate_readiness(analysis)
@@ -42,6 +48,12 @@ def test_readiness_score_prioritizes_missing_project_hygiene() -> None:
         has_env_example=False,
         readme_has_setup=False,
         readme_has_usage=False,
+        readme_has_project_purpose=False,
+        readme_has_tech_stack=False,
+        readme_has_demo_assets=False,
+        has_dependency_file=False,
+        has_docs=False,
+        has_frontend_backend_structure=False,
     )
 
     readiness = calculate_readiness(analysis)
@@ -57,3 +69,36 @@ def test_readiness_score_prioritizes_missing_project_hygiene() -> None:
         "Write a README that explains what the project does.",
         "Add setup instructions so an interviewer can run the project locally.",
     ]
+
+
+def test_readiness_score_penalizes_high_risk_density() -> None:
+    risks = [
+        RiskSignal(severity="medium", message=f"Long file detected ({300 + index} lines).", path=f"file_{index}.py")
+        for index in range(8)
+    ]
+    analysis = RepositoryAnalysis(
+        total_files=20,
+        total_directories=5,
+        languages={"Python": 18, "Markdown": 2},
+        largest_files=[],
+        risks=risks,
+        has_readme=True,
+        has_tests=True,
+        has_gitignore=True,
+        has_env_example=True,
+        readme_has_setup=True,
+        readme_has_usage=True,
+        readme_has_project_purpose=True,
+        readme_has_tech_stack=True,
+        readme_has_demo_assets=True,
+        has_dependency_file=True,
+        has_docs=True,
+        has_frontend_backend_structure=True,
+    )
+
+    readiness = calculate_readiness(analysis)
+    checklist = {item.name: item for item in readiness.checklist}
+
+    assert checklist["Risk density is low"].passed is False
+    assert checklist["No long files detected"].passed is False
+    assert readiness.score == 90

@@ -30,6 +30,7 @@ if analyze_clicked:
             readiness = payload["readiness"]
 
             st.subheader("Resume Readiness")
+            st.caption("Score is based on documentation, tests, setup, structure, dependencies, and risk signals.")
             score_cols = st.columns(3)
             score_cols[0].metric("Score", f"{readiness['score']} / 100")
             score_cols[1].metric("Status", readiness["status"])

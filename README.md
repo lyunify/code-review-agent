@@ -54,6 +54,8 @@ cd frontend
 - Save recent analysis history in SQLite.
 - Calculate a resume readiness score with checklist-based feedback.
 - Prioritize fixes before adding a project to a resume.
+- Check README quality signals such as purpose, setup, usage, tech stack, and demo assets.
+- Consider dependency files, docs, project structure, long files, and risk density.
 
 ## API Endpoints
 

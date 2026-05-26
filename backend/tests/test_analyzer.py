@@ -9,19 +9,37 @@ def write_file(path: Path, content: str) -> None:
 
 
 def test_analyze_repository_counts_languages_and_files(tmp_path: Path) -> None:
-    write_file(tmp_path / "README.md", "# Demo\n")
+    write_file(
+        tmp_path / "README.md",
+        "# Demo\n\nA tool that helps students review projects.\n\n"
+        "## Tech Stack\n\nPython and JavaScript.\n\n"
+        "## Setup\n\nRun `pip install -r requirements.txt`.\n\n"
+        "## Demo\n\nSee screenshots below.\n",
+    )
+    write_file(tmp_path / "requirements.txt", "fastapi\n")
+    write_file(tmp_path / ".gitignore", ".venv/\n")
+    write_file(tmp_path / ".env.example", "API_KEY=\n")
+    write_file(tmp_path / "docs" / "architecture.md", "# Architecture\n")
+    write_file(tmp_path / "frontend" / "app.py", "print('frontend')\n")
+    write_file(tmp_path / "backend" / "app.py", "print('backend')\n")
     write_file(tmp_path / "src" / "main.py", "print('hello')\n")
     write_file(tmp_path / "web" / "app.js", "console.log('hello');\n")
     write_file(tmp_path / "tests" / "test_main.py", "def test_main():\n    assert True\n")
 
     result = analyze_repository(tmp_path)
 
-    assert result.total_files == 4
-    assert result.total_directories == 3
-    assert result.languages["Python"] == 2
+    assert result.total_files == 10
+    assert result.total_directories == 6
+    assert result.languages["Python"] == 4
     assert result.languages["JavaScript"] == 1
     assert result.has_readme is True
     assert result.has_tests is True
+    assert result.has_dependency_file is True
+    assert result.has_docs is True
+    assert result.has_frontend_backend_structure is True
+    assert result.readme_has_project_purpose is True
+    assert result.readme_has_tech_stack is True
+    assert result.readme_has_demo_assets is True
 
 
 def test_analyze_repository_flags_missing_project_hygiene(tmp_path: Path) -> None:

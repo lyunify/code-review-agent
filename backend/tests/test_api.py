@@ -10,11 +10,23 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
     (repo_dir / "README.md").write_text(
-        "# Demo\n\n## Setup\n\nRun `pip install -r requirements.txt`.\n\n## Usage\n\nRun the app locally.\n",
+        "# Demo\n\n"
+        "This tool helps students review GitHub projects before adding them to resumes.\n\n"
+        "## Tech Stack\n\nPython and FastAPI.\n\n"
+        "## Setup\n\nRun `pip install -r requirements.txt`.\n\n"
+        "## Usage\n\nRun the app locally.\n\n"
+        "## Demo\n\nSee screenshots in the docs.\n",
         encoding="utf-8",
     )
+    (repo_dir / "requirements.txt").write_text("fastapi\n", encoding="utf-8")
     (repo_dir / ".gitignore").write_text(".venv/\n", encoding="utf-8")
     (repo_dir / ".env.example").write_text("API_KEY=\n", encoding="utf-8")
+    (repo_dir / "docs").mkdir()
+    (repo_dir / "docs" / "architecture.md").write_text("# Architecture\n", encoding="utf-8")
+    (repo_dir / "frontend").mkdir()
+    (repo_dir / "frontend" / "app.py").write_text("print('frontend')\n", encoding="utf-8")
+    (repo_dir / "backend").mkdir()
+    (repo_dir / "backend" / "app.py").write_text("print('backend')\n", encoding="utf-8")
     (repo_dir / "src").mkdir()
     (repo_dir / "src" / "main.py").write_text("print('hello')\n", encoding="utf-8")
     (repo_dir / "tests").mkdir()
@@ -33,10 +45,10 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["repo_url"] == "https://github.com/example/demo"
-    assert payload["analysis"]["total_files"] == 5
+    assert payload["analysis"]["total_files"] == 9
     assert "summary" in payload["report"]
-    assert payload["readiness"]["score"] >= 65
-    assert payload["readiness"]["status"] in {"Almost ready", "Resume-ready"}
+    assert payload["readiness"]["score"] >= 90
+    assert payload["readiness"]["status"] == "Resume-ready"
 
 
 def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) -> None:
