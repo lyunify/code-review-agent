@@ -3,59 +3,40 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.db.database import AnalysisHistoryStore
+from app.jobs import create_job, get_job, start_analysis_thread
 from app.models.schemas import (
     AnalysisHistoryDetail,
     AnalysisHistoryResponse,
     AnalyzeRequest,
-    AnalyzeResponse,
+    JobCreatedResponse,
+    JobStatusResponse,
 )
-from app.services.action_plan import generate_action_plan
-from app.services.analyzer import analyze_repository
-from app.services.github_metadata import fetch_github_metadata
-from app.services.mentor_agent import generate_mentor_feedback
-from app.services.readiness import calculate_readiness
-from app.services.repo_loader import clone_repository
-from app.services.report_generator import generate_report
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["analysis"])
 history_store = AnalysisHistoryStore()
 
 
-@router.post("/analyze", response_model=AnalyzeResponse)
-def analyze_repo(request: AnalyzeRequest) -> AnalyzeResponse:
+@router.post("/analyze", response_model=JobCreatedResponse)
+def analyze_repo(request: AnalyzeRequest) -> JobCreatedResponse:
     repo_url = str(request.repo_url).rstrip("/")
-    logger.info("Analysis requested: repo=%s", repo_url)
-    try:
-        repo_path = clone_repository(str(request.repo_url))
-        analysis = analyze_repository(repo_path)
-        github_metadata = fetch_github_metadata(repo_url)
-        report = generate_report(analysis)
-        readiness = calculate_readiness(analysis)
-        action_plan = generate_action_plan(analysis=analysis, readiness=readiness)
-        mentor_feedback = generate_mentor_feedback(repo_url=repo_url, analysis=analysis, readiness=readiness)
-        history_store.save_analysis(
-            repo_url=repo_url,
-            analysis=analysis,
-            report=report,
-            readiness=readiness,
-            mentor_feedback=mentor_feedback,
-            action_plan=action_plan,
-            github_metadata=github_metadata,
-        )
-        logger.info("Analysis complete: repo=%s score=%d", repo_url, readiness.score)
-    except Exception as exc:
-        logger.error("Analysis failed: repo=%s error=%s", repo_url, exc)
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    job_id = create_job()
+    logger.info("Job created: job_id=%s repo=%s", job_id, repo_url)
+    start_analysis_thread(job_id=job_id, repo_url=repo_url, history_store=history_store)
+    return JobCreatedResponse(job_id=job_id)
 
-    return AnalyzeResponse(
-        repo_url=repo_url,
-        analysis=analysis,
-        github_metadata=github_metadata,
-        report=report,
-        readiness=readiness,
-        mentor_feedback=mentor_feedback,
-        action_plan=action_plan,
+
+@router.get("/jobs/{job_id}", response_model=JobStatusResponse)
+def get_job_status(job_id: str) -> JobStatusResponse:
+    job = get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobStatusResponse(
+        job_id=job.job_id,
+        status=job.status,
+        progress=job.progress,
+        result=job.result,
+        error=job.error,
     )
 
 

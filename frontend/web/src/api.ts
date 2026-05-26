@@ -1,4 +1,4 @@
-import type { AnalyzeResponse, HistoryDetail, HistoryRecord } from './types'
+import type { AnalyzeResponse, HistoryDetail, HistoryRecord, JobStatusResponse } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
@@ -11,19 +11,35 @@ export function normalizeRepoUrl(repoUrl: string): string {
 }
 
 export async function analyzeRepository(repoUrl: string): Promise<AnalyzeResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+  const startResponse = await fetch(`${API_BASE_URL}/api/analyze`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ repo_url: normalizeRepoUrl(repoUrl) }),
   })
-
-  if (!response.ok) {
-    throw new Error(await getErrorMessage(response))
+  if (!startResponse.ok) {
+    throw new Error(await getErrorMessage(startResponse))
   }
+  const { job_id } = (await startResponse.json()) as { job_id: string }
+  return pollJob(job_id)
+}
 
-  return response.json()
+async function pollJob(jobId: string): Promise<AnalyzeResponse> {
+  const MAX_POLLS = 300 // 10 minutes at 2s intervals
+  for (let poll = 0; poll < MAX_POLLS; poll++) {
+    const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`)
+    if (!response.ok) {
+      throw new Error(await getErrorMessage(response))
+    }
+    const job = (await response.json()) as JobStatusResponse
+    if (job.status === 'done' && job.result !== null) {
+      return job.result
+    }
+    if (job.status === 'failed') {
+      throw new Error(job.error ?? 'Analysis failed')
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 2000))
+  }
+  throw new Error('Analysis timed out after 10 minutes')
 }
 
 export async function fetchHistory(): Promise<HistoryRecord[]> {
@@ -31,7 +47,7 @@ export async function fetchHistory(): Promise<HistoryRecord[]> {
   if (!response.ok) {
     throw new Error(await getErrorMessage(response))
   }
-  const payload = await response.json()
+  const payload = (await response.json()) as { records: HistoryRecord[] }
   return payload.records
 }
 

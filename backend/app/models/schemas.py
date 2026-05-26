@@ -136,3 +136,15 @@ class AnalysisHistoryDetail(BaseModel):
     readiness: ResumeReadiness
     mentor_feedback: MentorFeedback
     action_plan: ActionPlan
+
+
+class JobCreatedResponse(BaseModel):
+    job_id: str
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: str  # "pending" | "running" | "done" | "failed"
+    progress: str
+    result: AnalyzeResponse | None = None
+    error: str | None = None

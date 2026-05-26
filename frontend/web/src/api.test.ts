@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchHistoryRecord, getFriendlyErrorMessage, normalizeRepoUrl } from './api'
+import { analyzeRepository, fetchHistoryRecord, getFriendlyErrorMessage, normalizeRepoUrl } from './api'
 
 describe('normalizeRepoUrl', () => {
   it('adds https scheme when missing', () => {
@@ -66,30 +66,50 @@ describe('analyzeRepository', () => {
     vi.restoreAllMocks()
   })
 
-  it('posts to analyze endpoint and returns payload', async () => {
-    const payload = { repo_url: 'https://github.com/example/demo' }
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => payload,
-    })
-    vi.stubGlobal('fetch', fetchMock)
-    const { analyzeRepository } = await import('./api')
-    await expect(analyzeRepository('https://github.com/example/demo')).resolves.toEqual(payload)
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/analyze'),
-      expect.objectContaining({ method: 'POST' }),
+  it('analyzeRepository polls until job is done', async () => {
+    let callCount = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, opts?: RequestInit) => {
+        callCount++
+        if (opts?.method === 'POST') {
+          return new Response(JSON.stringify({ job_id: 'test-job-id' }), { status: 200 })
+        }
+        // First poll: running. Second poll: done.
+        if (callCount <= 2) {
+          return new Response(
+            JSON.stringify({
+              job_id: 'test-job-id',
+              status: 'running',
+              progress: 'Analyzing...',
+              result: null,
+              error: null,
+            }),
+            { status: 200 },
+          )
+        }
+        return new Response(
+          JSON.stringify({
+            job_id: 'test-job-id',
+            status: 'done',
+            progress: 'Done',
+            result: { repo_url: 'https://github.com/example/demo' },
+            error: null,
+          }),
+          { status: 200 },
+        )
+      }),
     )
-  })
+    vi.useFakeTimers()
 
-  it('throws when response is not ok', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({ detail: 'Not found' }),
-      statusText: 'Not Found',
-    })
-    vi.stubGlobal('fetch', fetchMock)
-    const { analyzeRepository } = await import('./api')
-    await expect(analyzeRepository('https://github.com/example/demo')).rejects.toThrow('Not found')
+    const promise = analyzeRepository('https://github.com/example/demo')
+    // Advance past the 2-second poll interval twice
+    await vi.runAllTimersAsync()
+
+    const result = await promise
+    expect(result.repo_url).toBe('https://github.com/example/demo')
+
+    vi.useRealTimers()
   })
 })
 

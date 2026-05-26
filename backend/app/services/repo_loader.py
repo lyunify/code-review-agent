@@ -1,19 +1,17 @@
 import logging
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from git import Repo
 
 logger = logging.getLogger(__name__)
 
-_TEMP_DIRECTORIES: list[TemporaryDirectory[str]] = []
 
+def clone_repository(repo_url: str, dest: Path) -> None:
+    """Clone a public GitHub repository (shallow, depth=1) to dest.
 
-def clone_repository(repo_url: str) -> Path:
-    logger.info("Cloning repository: url=%s", repo_url)
-    temp_dir = TemporaryDirectory(prefix="code-review-agent-")
-    _TEMP_DIRECTORIES.append(temp_dir)
-    destination = Path(temp_dir.name) / "repo"
-    Repo.clone_from(repo_url, destination, depth=1)
-    logger.info("Clone complete: path=%s", destination)
-    return destination
+    The caller is responsible for creating and cleaning up the parent
+    temporary directory.
+    """
+    logger.info("Cloning repository: url=%s dest=%s", repo_url, dest)
+    Repo.clone_from(repo_url, dest, depth=1)
+    logger.info("Clone complete: dest=%s", dest)

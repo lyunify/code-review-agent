@@ -102,3 +102,13 @@ export type HistoryDetail = AnalyzeResponse & {
   id: number
   created_at: string
 }
+
+export type JobStatus = 'pending' | 'running' | 'done' | 'failed'
+
+export type JobStatusResponse = {
+  job_id: string
+  status: JobStatus
+  progress: string
+  result: AnalyzeResponse | null
+  error: string | null
+}
