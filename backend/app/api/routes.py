@@ -1,7 +1,12 @@
 from fastapi import APIRouter, HTTPException
 
 from app.db.database import AnalysisHistoryStore
-from app.models.schemas import AnalyzeRequest, AnalyzeResponse, AnalysisHistoryDetail, AnalysisHistoryResponse
+from app.models.schemas import (
+    AnalysisHistoryDetail,
+    AnalysisHistoryResponse,
+    AnalyzeRequest,
+    AnalyzeResponse,
+)
 from app.services.action_plan import generate_action_plan
 from app.services.analyzer import analyze_repository
 from app.services.github_metadata import fetch_github_metadata

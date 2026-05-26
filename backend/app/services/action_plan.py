@@ -1,6 +1,5 @@
 from app.models.schemas import ActionPlan, ActionPlanItem, RepositoryAnalysis, ResumeReadiness
 
-
 ACTION_PLAN_GUIDANCE = {
     "Automated tests exist": ActionPlanItem(
         title="Add automated tests",
