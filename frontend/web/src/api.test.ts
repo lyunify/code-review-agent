@@ -61,6 +61,77 @@ describe('fetchHistoryRecord', () => {
   })
 })
 
+describe('analyzeRepository', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('posts to analyze endpoint and returns payload', async () => {
+    const payload = { repo_url: 'https://github.com/example/demo' }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => payload,
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { analyzeRepository } = await import('./api')
+    await expect(analyzeRepository('https://github.com/example/demo')).resolves.toEqual(payload)
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/analyze'),
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('throws when response is not ok', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ detail: 'Not found' }),
+      statusText: 'Not Found',
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { analyzeRepository } = await import('./api')
+    await expect(analyzeRepository('https://github.com/example/demo')).rejects.toThrow('Not found')
+  })
+})
+
+describe('fetchHistory', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('returns records from history endpoint', async () => {
+    const records = [{ id: 1, repo_url: 'https://github.com/a/b' }]
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ records }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { fetchHistory } = await import('./api')
+    await expect(fetchHistory()).resolves.toEqual(records)
+  })
+
+  it('throws when response is not ok with array detail', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ detail: [{ msg: 'Validation error' }] }),
+      statusText: 'Bad Request',
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { fetchHistory } = await import('./api')
+    await expect(fetchHistory()).rejects.toThrow('Validation error')
+  })
+
+  it('throws when response is not ok with non-JSON body', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => { throw new Error('not JSON') },
+      statusText: 'Internal Server Error',
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { fetchHistory } = await import('./api')
+    await expect(fetchHistory()).rejects.toThrow('Internal Server Error')
+  })
+})
+
 describe('getFriendlyErrorMessage', () => {
   it('explains backend connectivity failures', () => {
     expect(getFriendlyErrorMessage('Failed to fetch')).toBe(
@@ -77,6 +148,18 @@ describe('getFriendlyErrorMessage', () => {
   it('preserves specific backend messages when no product copy matches', () => {
     expect(getFriendlyErrorMessage('Repository does not contain a README file.')).toBe(
       'Repository does not contain a README file.',
+    )
+  })
+
+  it('explains repository not found errors', () => {
+    expect(getFriendlyErrorMessage('Repository not found')).toBe(
+      'Could not access that repository. Make sure it is public and the URL is correct.',
+    )
+  })
+
+  it('explains missing OpenAI API key errors', () => {
+    expect(getFriendlyErrorMessage('Missing OPENAI_API_KEY')).toBe(
+      'AI mentor feedback needs an OpenAI API key in backend/.env, but the static scanner can still run.',
     )
   })
 })

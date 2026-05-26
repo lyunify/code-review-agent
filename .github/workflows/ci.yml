@@ -37,9 +37,9 @@ jobs:
         working-directory: backend
         run: mypy app/
 
-      - name: Run backend tests
+      - name: Run backend tests with coverage
         working-directory: backend
-        run: pytest
+        run: pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 
   frontend:
     name: Frontend tests and build
@@ -64,9 +64,9 @@ jobs:
         working-directory: frontend/web
         run: npm run lint -- --max-warnings 0
 
-      - name: Run frontend tests
+      - name: Run frontend tests with coverage
         working-directory: frontend/web
-        run: npm test
+        run: npm test -- --coverage
 
       - name: Build frontend
         working-directory: frontend/web

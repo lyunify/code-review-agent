@@ -22,3 +22,10 @@ warn_return_any = true
 # the "git.*" / "requests.*" globs only cover submodules, not the top-level name
 module = ["git", "git.*", "streamlit", "streamlit.*", "requests", "requests.*"]
 ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/db/*", "*/tests/*"]
+
+[tool.coverage.report]
+fail_under = 80
