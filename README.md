@@ -5,9 +5,10 @@ A Python-based repository analysis app that helps CS students judge whether a Gi
 ## Tech Stack
 
 - Backend: FastAPI
-- Frontend: Streamlit
+- Frontend: React, TypeScript, Vite
+- Legacy quick demo: Streamlit
 - Core logic: Python services
-- Tests: pytest
+- Tests: pytest, Vitest
 
 ## Local Setup
 
@@ -26,6 +27,13 @@ OPENAI_API_KEY=your_api_key_here
 OPENAI_MODEL=gpt-5.4-mini
 ```
 
+Install the React frontend:
+
+```bash
+cd ../frontend/web
+npm install
+```
+
 ## Run Tests
 
 ```bash
@@ -42,7 +50,18 @@ source .venv/bin/activate
 uvicorn app.main:app --reload
 ```
 
-## Run Frontend
+## Run React Frontend
+
+In a second terminal:
+
+```bash
+cd frontend/web
+npm run dev
+```
+
+Open `http://127.0.0.1:5173`.
+
+## Run Streamlit Frontend
 
 In a second terminal:
 
@@ -66,6 +85,7 @@ cd frontend
 - Consider dependency files, docs, project structure, long files, and risk density.
 - Generate mock mentor feedback with resume bullets, interview questions, and next steps.
 - Use OpenAI-backed mentor feedback when `OPENAI_API_KEY` is configured, with rule-based fallback.
+- Present results in a React + TypeScript dashboard for a more polished portfolio demo.
 
 ## API Endpoints
 

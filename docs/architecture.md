@@ -1,6 +1,6 @@
 # Architecture
 
-`code-review-agent` is split into a Python backend and a Python-first demo frontend.
+`code-review-agent` is split into a Python backend, a polished React frontend, and a legacy Streamlit quick demo.
 
 ## Backend
 
@@ -8,7 +8,7 @@ The FastAPI backend accepts analysis requests, clones public repositories, runs 
 
 ## Frontend
 
-The Streamlit frontend is a lightweight dashboard. It calls the backend API, then renders metrics, risks, largest files, and report text.
+The React frontend is the primary portfolio demo. It calls the backend API, then renders resume readiness, AI mentor feedback, checklist results, technical scan details, and history. The Streamlit frontend remains available as a lightweight local fallback.
 
 ## Service Boundaries
 

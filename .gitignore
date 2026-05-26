@@ -10,3 +10,8 @@ __pycache__/
 *.db
 tmp/
 cloned_repos/
+node_modules/
+dist/
+frontend/web/node_modules/
+frontend/web/dist/
+*.tsbuildinfo
