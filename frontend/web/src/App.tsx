@@ -4,6 +4,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Code2,
+  Cpu,
   FileText,
   Github,
   History,
@@ -43,18 +44,27 @@ function App() {
 
   return (
     <main className="app-shell">
+      <nav className="top-nav">
+        <div className="brand">
+          <span className="brand-mark">CRA</span>
+          <span>Code Review Agent</span>
+        </div>
+        <div className="nav-links">
+          <span>Resume score</span>
+          <span>AI mentor</span>
+          <span>Repo hygiene</span>
+        </div>
+      </nav>
+
       <section className="hero">
         <div>
-          <p className="eyebrow">Resume-ready GitHub project reviews</p>
-          <h1>Turn a student repo into an interview-ready project story.</h1>
+          <p className="eyebrow">Issue No. 01 · For SDE internship candidates</p>
+          <h1>Know if your GitHub project is ready for the resume.</h1>
           <p className="hero-copy">
             Analyze documentation, tests, structure, risk signals, and AI mentor feedback before a project goes on your SDE intern resume.
           </p>
         </div>
-        <div className="hero-panel">
-          <Sparkles size={22} />
-          <span>FastAPI + React + SQLite + OpenAI</span>
-        </div>
+        <HeroPreview />
       </section>
 
       <section className="analyze-bar">
@@ -85,6 +95,39 @@ function App() {
   )
 }
 
+function HeroPreview() {
+  return (
+    <aside className="hero-preview" aria-label="Product preview">
+      <div className="preview-toolbar">
+        <span>repo_ready.review</span>
+        <strong>Live report</strong>
+      </div>
+      <div className="preview-score">
+        <div>
+          <p>Readiness</p>
+          <strong>86</strong>
+        </div>
+        <span>Resume-ready</span>
+      </div>
+      <div className="preview-thread">
+        <div className="preview-line">
+          <Cpu size={16} />
+          <span>README has setup, stack, and demo signals.</span>
+        </div>
+        <div className="preview-line muted-line">
+          <Sparkles size={16} />
+          <span>Prepare answers for scaling, tests, and tradeoffs.</span>
+        </div>
+      </div>
+      <div className="preview-checks">
+        <span>Tests</span>
+        <span>Docs</span>
+        <span>AI mentor</span>
+      </div>
+    </aside>
+  )
+}
+
 function Dashboard({ result }: { result: AnalyzeResponse }) {
   const statusClass = result.readiness.score >= 85 ? 'ready' : result.readiness.score >= 65 ? 'mid' : 'low'
   const languageRows = useMemo(
@@ -94,6 +137,11 @@ function Dashboard({ result }: { result: AnalyzeResponse }) {
 
   return (
     <>
+      <section className="report-header">
+        <p className="eyebrow">Generated project review</p>
+        <h2>{result.repo_url.replace('https://github.com/', '')}</h2>
+      </section>
+
       <section className="score-grid">
         <Metric label="Readiness score" value={`${result.readiness.score}/100`} />
         <Metric label="Status" value={result.readiness.status} accent={statusClass} />
@@ -105,7 +153,7 @@ function Dashboard({ result }: { result: AnalyzeResponse }) {
         <article className="panel panel-large">
           <div className="panel-heading">
             <MessageSquareText size={20} />
-            <h2>AI Mentor Feedback</h2>
+            <h2>Mentor Feedback</h2>
           </div>
           <p className="mentor-summary">{result.mentor_feedback.mentor_summary}</p>
           <div className="three-column">
@@ -118,7 +166,7 @@ function Dashboard({ result }: { result: AnalyzeResponse }) {
         <article className="panel">
           <div className="panel-heading">
             <CheckCircle2 size={20} />
-            <h2>Top Fixes</h2>
+            <h2>Before Resume</h2>
           </div>
           <ul className="clean-list">
             {result.readiness.priority_fixes.map((fix) => (
@@ -147,6 +195,10 @@ function Dashboard({ result }: { result: AnalyzeResponse }) {
             <h2>Technical Scan</h2>
           </div>
           <p className="summary">{result.report.summary}</p>
+          <div className="scan-stats">
+            <span>{result.analysis.total_directories} directories</span>
+            <span>{result.analysis.largest_files.length} largest files tracked</span>
+          </div>
           <div className="language-list">
             {languageRows.map(([language, count]) => (
               <div className="language-row" key={language}>
