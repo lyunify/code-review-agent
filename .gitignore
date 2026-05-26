@@ -15,3 +15,6 @@ dist/
 frontend/web/node_modules/
 frontend/web/dist/
 *.tsbuildinfo
+
+# Internal planning docs (not for public)
+docs/superpowers/
