@@ -1,5 +1,7 @@
 # Code Review Agent
 
+[![CI](https://github.com/lyunify/code-review-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/lyunify/code-review-agent/actions/workflows/ci.yml)
+
 An AI-assisted repository readiness platform that helps CS students evaluate whether a GitHub project is strong enough to include on an SDE internship resume. It analyzes public repositories, scores project readiness, generates prioritized improvement plans, and turns technical signals into resume and interview preparation guidance.
 
 ## Problem
@@ -14,7 +16,7 @@ Students often know how to build class projects, but it is harder to judge wheth
 - AI feedback: OpenAI API with rule-based fallback
 - Legacy prototype: Streamlit
 - Core logic: Python services
-- Tests: pytest, Vitest
+- Tests and CI: pytest, Vitest, GitHub Actions
 
 ## Architecture
 
@@ -163,6 +165,7 @@ cd frontend
 - AI feedback is treated as an enhancement, not a hard dependency; local fallback logic keeps the app usable without an API key.
 - The React frontend is split into typed components for dashboard, rubric, action plan, mentor feedback, loading state, and sidebar navigation.
 - Demo mode provides a stable offline result for presentations and future screenshots.
+- GitHub Actions runs backend tests, frontend tests, and the frontend production build on push and pull requests.
 
 ## Future Improvements
 
