@@ -68,7 +68,8 @@ class AnalysisHistoryStore:
                 ),
             )
             connection.commit()
-            record_id = int(cursor.lastrowid)
+            # lastrowid is always set after a successful INSERT
+            record_id = int(cursor.lastrowid)  # type: ignore[arg-type]
 
         return AnalysisHistoryRecord(
             id=record_id,
@@ -199,5 +200,6 @@ class AnalysisHistoryStore:
         return connection
 
 
-def analysis_to_dict(analysis_json: str) -> dict:
-    return json.loads(analysis_json)
+def analysis_to_dict(analysis_json: str) -> dict[str, object]:
+    result: dict[str, object] = json.loads(analysis_json)
+    return result

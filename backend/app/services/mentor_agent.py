@@ -84,7 +84,8 @@ def _generate_openai_feedback(
     parsed = response.output_parsed
     if isinstance(parsed, MentorFeedback):
         return parsed
-    return MentorFeedback.model_validate(parsed)
+    # output_parsed may be Any when the SDK lacks precise generics; model_validate returns Self
+    return MentorFeedback.model_validate(parsed)  # type: ignore[no-any-return]
 
 
 def _create_openai_client() -> Any:
