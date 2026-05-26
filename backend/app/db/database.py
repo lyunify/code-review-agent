@@ -6,6 +6,7 @@ from pathlib import Path
 from app.models.schemas import (
     AnalysisHistoryDetail,
     AnalysisHistoryRecord,
+    ActionPlan,
     MentorFeedback,
     RepositoryAnalysis,
     ResumeReadiness,
@@ -25,6 +26,7 @@ class AnalysisHistoryStore:
         report: ReviewReport,
         readiness: ResumeReadiness,
         mentor_feedback: MentorFeedback,
+        action_plan: ActionPlan,
     ) -> AnalysisHistoryRecord:
         created_at = datetime.now(UTC).isoformat()
         with self._connect() as connection:
@@ -41,9 +43,10 @@ class AnalysisHistoryStore:
                     analysis_json,
                     report_json,
                     readiness_json,
-                    mentor_feedback_json
+                    mentor_feedback_json,
+                    action_plan_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     repo_url,
@@ -57,6 +60,7 @@ class AnalysisHistoryStore:
                     report.model_dump_json(),
                     readiness.model_dump_json(),
                     mentor_feedback.model_dump_json(),
+                    action_plan.model_dump_json(),
                 ),
             )
             connection.commit()
@@ -118,14 +122,20 @@ class AnalysisHistoryStore:
                     analysis_json,
                     report_json,
                     readiness_json,
-                    mentor_feedback_json
+                    mentor_feedback_json,
+                    action_plan_json
                 FROM analysis_history
                 WHERE id = ?
                 """,
                 (record_id,),
             ).fetchone()
 
-        if row is None or row["readiness_json"] is None or row["mentor_feedback_json"] is None:
+        if (
+            row is None
+            or row["readiness_json"] is None
+            or row["mentor_feedback_json"] is None
+            or row["action_plan_json"] is None
+        ):
             return None
 
         return AnalysisHistoryDetail(
@@ -136,6 +146,7 @@ class AnalysisHistoryStore:
             report=ReviewReport.model_validate_json(row["report_json"]),
             readiness=ResumeReadiness.model_validate_json(row["readiness_json"]),
             mentor_feedback=MentorFeedback.model_validate_json(row["mentor_feedback_json"]),
+            action_plan=ActionPlan.model_validate_json(row["action_plan_json"]),
         )
 
     def _initialize(self) -> None:
@@ -155,7 +166,8 @@ class AnalysisHistoryStore:
                     analysis_json TEXT NOT NULL,
                     report_json TEXT NOT NULL,
                     readiness_json TEXT,
-                    mentor_feedback_json TEXT
+                    mentor_feedback_json TEXT,
+                    action_plan_json TEXT
                 )
                 """
             )
@@ -167,6 +179,8 @@ class AnalysisHistoryStore:
                 connection.execute("ALTER TABLE analysis_history ADD COLUMN readiness_json TEXT")
             if "mentor_feedback_json" not in existing_columns:
                 connection.execute("ALTER TABLE analysis_history ADD COLUMN mentor_feedback_json TEXT")
+            if "action_plan_json" not in existing_columns:
+                connection.execute("ALTER TABLE analysis_history ADD COLUMN action_plan_json TEXT")
             connection.commit()
 
     def _connect(self) -> sqlite3.Connection:

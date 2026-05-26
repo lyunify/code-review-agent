@@ -1,7 +1,15 @@
 from pathlib import Path
 
 from app.db.database import AnalysisHistoryStore
-from app.models.schemas import MentorFeedback, ReadinessChecklistItem, RepositoryAnalysis, ResumeReadiness, ReviewReport
+from app.models.schemas import (
+    ActionPlan,
+    ActionPlanItem,
+    MentorFeedback,
+    ReadinessChecklistItem,
+    RepositoryAnalysis,
+    ResumeReadiness,
+    ReviewReport,
+)
 
 
 def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
@@ -38,6 +46,17 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
         interview_questions=["How does the analyzer score projects?"],
         next_steps=["Add screenshots."],
     )
+    action_plan = ActionPlan(
+        items=[
+            ActionPlanItem(
+                title="Add screenshots",
+                category="Presentation",
+                why_it_matters="Screenshots make the project easier to inspect.",
+                how_to_improve="Capture the dashboard.",
+                resume_impact="Makes the repo portfolio-ready.",
+            )
+        ]
+    )
 
     saved = store.save_analysis(
         repo_url="https://github.com/example/demo",
@@ -45,6 +64,7 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
         report=report,
         readiness=readiness,
         mentor_feedback=mentor_feedback,
+        action_plan=action_plan,
     )
     records = store.list_recent(limit=5)
     detail = store.get_analysis(saved.id)
@@ -60,3 +80,4 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
     assert detail.analysis.total_files == 3
     assert detail.readiness.score == 90
     assert detail.mentor_feedback.resume_bullets == ["Built a Python repository analyzer."]
+    assert detail.action_plan.items[0].title == "Add screenshots"

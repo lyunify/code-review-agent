@@ -518,6 +518,73 @@ input {
   display: grid;
 }
 
+.action-plan-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.action-step {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.action-step-index {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.action-step-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.action-step-header span {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #eaf0ff;
+  color: #2563eb;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.action-step h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.25rem;
+}
+
+.action-step dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.action-step dt {
+  margin-bottom: 6px;
+  color: #536171;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.action-step dd {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.45;
+}
+
 .mentor-page {
   background: #f8fafc;
 }
@@ -698,6 +765,8 @@ input {
   .dashboard-grid,
   .rubric-grid,
   .mentor-page-grid,
+  .action-step,
+  .action-step dl,
   .command-bar,
   .metric-grid {
     grid-template-columns: 1fr;

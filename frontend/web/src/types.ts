@@ -45,12 +45,25 @@ export type MentorFeedback = {
   next_steps: string[]
 }
 
+export type ActionPlanItem = {
+  title: string
+  category: string
+  why_it_matters: string
+  how_to_improve: string
+  resume_impact: string
+}
+
+export type ActionPlan = {
+  items: ActionPlanItem[]
+}
+
 export type AnalyzeResponse = {
   repo_url: string
   analysis: RepositoryAnalysis
   readiness: ResumeReadiness
   report: ReviewReport
   mentor_feedback: MentorFeedback
+  action_plan: ActionPlan
 }
 
 export type HistoryRecord = {

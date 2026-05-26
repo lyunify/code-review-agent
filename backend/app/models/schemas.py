@@ -64,12 +64,25 @@ class MentorFeedback(BaseModel):
     next_steps: list[str]
 
 
+class ActionPlanItem(BaseModel):
+    title: str
+    category: str
+    why_it_matters: str
+    how_to_improve: str
+    resume_impact: str
+
+
+class ActionPlan(BaseModel):
+    items: list[ActionPlanItem]
+
+
 class AnalyzeResponse(BaseModel):
     repo_url: str
     analysis: RepositoryAnalysis
     report: ReviewReport
     readiness: ResumeReadiness
     mentor_feedback: MentorFeedback
+    action_plan: ActionPlan
 
 
 class AnalysisHistoryRecord(BaseModel):
@@ -95,3 +108,4 @@ class AnalysisHistoryDetail(BaseModel):
     report: ReviewReport
     readiness: ResumeReadiness
     mentor_feedback: MentorFeedback
+    action_plan: ActionPlan

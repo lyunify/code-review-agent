@@ -6,6 +6,15 @@ export function generateMarkdownReport(result: AnalyzeResponse): string {
     .join('\n')
 
   const priorityFixes = result.readiness.priority_fixes.map((fix, index) => `${index + 1}. ${fix}`).join('\n')
+  const actionPlan = result.action_plan.items
+    .map(
+      (item, index) =>
+        `${index + 1}. **${item.title}** (${item.category})\n` +
+        `   - Why it matters: ${item.why_it_matters}\n` +
+        `   - How to improve: ${item.how_to_improve}\n` +
+        `   - Resume impact: ${item.resume_impact}`,
+    )
+    .join('\n')
   const resumeBullets = result.mentor_feedback.resume_bullets.map((bullet) => `- ${bullet}`).join('\n')
   const interviewQuestions = result.mentor_feedback.interview_questions.map((question, index) => `${index + 1}. ${question}`).join('\n')
   const risks = result.analysis.risks.length
@@ -25,6 +34,10 @@ ${result.mentor_feedback.mentor_summary}
 ## Top Fixes
 
 ${priorityFixes}
+
+## Action Plan
+
+${actionPlan}
 
 ## Resume Bullet Suggestions
 

@@ -51,6 +51,7 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     assert payload["readiness"]["status"] == "Resume-ready"
     assert "mentor_summary" in payload["mentor_feedback"]
     assert len(payload["mentor_feedback"]["resume_bullets"]) == 3
+    assert len(payload["action_plan"]["items"]) >= 1
 
 
 def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) -> None:
@@ -109,6 +110,7 @@ def test_history_detail_endpoint_returns_full_saved_report(monkeypatch, tmp_path
     assert payload["report"]["summary"]
     assert payload["readiness"]["score"] > 0
     assert "mentor_summary" in payload["mentor_feedback"]
+    assert len(payload["action_plan"]["items"]) >= 1
 
 
 def test_history_detail_endpoint_returns_404_for_missing_record(monkeypatch, tmp_path: Path) -> None:

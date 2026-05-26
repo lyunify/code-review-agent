@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.db.database import AnalysisHistoryStore
 from app.models.schemas import AnalyzeRequest, AnalyzeResponse, AnalysisHistoryDetail, AnalysisHistoryResponse
+from app.services.action_plan import generate_action_plan
 from app.services.analyzer import analyze_repository
 from app.services.mentor_agent import generate_mentor_feedback
 from app.services.readiness import calculate_readiness
@@ -19,6 +20,7 @@ def analyze_repo(request: AnalyzeRequest) -> AnalyzeResponse:
         analysis = analyze_repository(repo_path)
         report = generate_report(analysis)
         readiness = calculate_readiness(analysis)
+        action_plan = generate_action_plan(analysis=analysis, readiness=readiness)
         repo_url = str(request.repo_url).rstrip("/")
         mentor_feedback = generate_mentor_feedback(repo_url=repo_url, analysis=analysis, readiness=readiness)
         history_store.save_analysis(
@@ -27,6 +29,7 @@ def analyze_repo(request: AnalyzeRequest) -> AnalyzeResponse:
             report=report,
             readiness=readiness,
             mentor_feedback=mentor_feedback,
+            action_plan=action_plan,
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -37,6 +40,7 @@ def analyze_repo(request: AnalyzeRequest) -> AnalyzeResponse:
         report=report,
         readiness=readiness,
         mentor_feedback=mentor_feedback,
+        action_plan=action_plan,
     )
 
 

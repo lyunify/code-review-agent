@@ -10,6 +10,7 @@ import {
   Github,
   History,
   Layers3,
+  ListChecks,
   Loader2,
   MessageSquareText,
   Sparkles,
@@ -19,7 +20,7 @@ import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse, HistoryRecord, ReadinessChecklistItem } from './types'
 
 type Tab = 'resume' | 'interview' | 'risks'
-type View = 'dashboard' | 'rubric' | 'mentor'
+type View = 'dashboard' | 'action' | 'rubric' | 'mentor'
 
 function App() {
   const [repoUrl, setRepoUrl] = useState('https://github.com/lyunify/code-review-agent')
@@ -109,6 +110,8 @@ function App() {
         {result ? (
           activeView === 'dashboard' ? (
           <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
+          ) : activeView === 'action' ? (
+            <ActionPlanView result={result} />
           ) : activeView === 'rubric' ? (
             <RubricView result={result} />
           ) : (
@@ -154,6 +157,10 @@ function Sidebar({
           <ClipboardList size={18} />
           Readiness rubric
         </button>
+        <button className={activeView === 'action' ? 'active' : ''} onClick={() => onViewChange('action')}>
+          <ListChecks size={18} />
+          Action plan
+        </button>
         <button className={activeView === 'mentor' ? 'active' : ''} onClick={() => onViewChange('mentor')}>
           <Sparkles size={18} />
           AI mentor
@@ -184,6 +191,48 @@ function Sidebar({
         )}
       </div>
     </aside>
+  )
+}
+
+function ActionPlanView({ result }: { result: AnalyzeResponse }) {
+  return (
+    <section className="single-view">
+      <div className="repo-header panel">
+        <div>
+          <p className="eyebrow">Action plan</p>
+          <h2>What should this student fix next?</h2>
+        </div>
+        <span className="status-pill ready">{result.action_plan.items.length} priority steps</span>
+      </div>
+
+      <div className="action-plan-grid">
+        {result.action_plan.items.map((item, index) => (
+          <article className="panel action-step" key={`${item.title}-${index}`}>
+            <div className="action-step-index">{String(index + 1).padStart(2, '0')}</div>
+            <div>
+              <div className="action-step-header">
+                <span>{item.category}</span>
+                <h3>{item.title}</h3>
+              </div>
+              <dl>
+                <div>
+                  <dt>Why it matters</dt>
+                  <dd>{item.why_it_matters}</dd>
+                </div>
+                <div>
+                  <dt>How to improve</dt>
+                  <dd>{item.how_to_improve}</dd>
+                </div>
+                <div>
+                  <dt>Resume impact</dt>
+                  <dd>{item.resume_impact}</dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -490,6 +539,8 @@ function EmptyWorkbench({ history, activeView }: { history: HistoryRecord[]; act
   const title =
     activeView === 'rubric'
       ? 'Run a repository review to inspect the readiness rubric.'
+      : activeView === 'action'
+        ? 'Run a repository review to generate a prioritized action plan.'
       : activeView === 'mentor'
         ? 'Run a repository review to generate AI mentor feedback.'
         : 'Run a repository review to generate the workspace.'

@@ -40,6 +40,17 @@ const result: AnalyzeResponse = {
     interview_questions: ['How would you scale this?'],
     next_steps: ['Add tests.'],
   },
+  action_plan: {
+    items: [
+      {
+        title: 'Add automated tests',
+        category: 'Testing',
+        why_it_matters: 'Interviewers trust projects more when behavior is tested.',
+        how_to_improve: 'Add tests for the core workflow.',
+        resume_impact: 'Shows engineering discipline.',
+      },
+    ],
+  },
 }
 
 describe('generateMarkdownReport', () => {
@@ -49,6 +60,8 @@ describe('generateMarkdownReport', () => {
     expect(report).toContain('# Repository Readiness Report')
     expect(report).toContain('**Score:** 82/100')
     expect(report).toContain('This project is close to resume-ready.')
+    expect(report).toContain('## Action Plan')
+    expect(report).toContain('Add automated tests')
     expect(report).toContain('- [x] README exists')
     expect(report).toContain('- [ ] Automated tests exist')
     expect(report).toContain('Long file detected')
