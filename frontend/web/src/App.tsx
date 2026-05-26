@@ -33,6 +33,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('resume')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [pollCount, setPollCount] = useState(0)
   const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
@@ -46,9 +47,10 @@ function App() {
     const targetRepoUrl = nextRepoUrl.trim()
     setRepoUrl(targetRepoUrl)
     setIsLoading(true)
+    setPollCount(0)
     setError(null)
     try {
-      const payload = await analyzeRepository(targetRepoUrl)
+      const payload = await analyzeRepository(targetRepoUrl, setPollCount)
       setResult(payload)
       setActiveView('dashboard')
       setActiveTab('resume')
@@ -116,7 +118,7 @@ function App() {
         )}
 
         {isLoading ? (
-          <LoadingWorkbench repoUrl={repoUrl} />
+          <LoadingWorkbench repoUrl={repoUrl} pollCount={pollCount} />
         ) : result ? (
           <>
             <nav className="view-tabs">

@@ -10,7 +10,7 @@ export function normalizeRepoUrl(repoUrl: string): string {
   return cleaned
 }
 
-export async function analyzeRepository(repoUrl: string): Promise<AnalyzeResponse> {
+export async function analyzeRepository(repoUrl: string, onPoll?: (count: number) => void): Promise<AnalyzeResponse> {
   const startResponse = await fetch(`${API_BASE_URL}/api/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -20,12 +20,13 @@ export async function analyzeRepository(repoUrl: string): Promise<AnalyzeRespons
     throw new Error(await getErrorMessage(startResponse))
   }
   const { job_id } = (await startResponse.json()) as { job_id: string }
-  return pollJob(job_id)
+  return pollJob(job_id, onPoll)
 }
 
-async function pollJob(jobId: string): Promise<AnalyzeResponse> {
+async function pollJob(jobId: string, onPoll?: (count: number) => void): Promise<AnalyzeResponse> {
   const MAX_POLLS = 300 // 10 minutes at 2s intervals
   for (let poll = 0; poll < MAX_POLLS; poll++) {
+    onPoll?.(poll)
     const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`)
     if (!response.ok) {
       throw new Error(await getErrorMessage(response))

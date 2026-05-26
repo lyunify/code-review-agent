@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 
-export function LoadingWorkbench({ repoUrl }: { repoUrl: string }) {
+export function LoadingWorkbench({ repoUrl, pollCount = 0 }: { repoUrl: string; pollCount?: number }) {
   const steps = [
     { label: 'Clone repository', detail: 'Fetch public GitHub files for analysis.' },
     { label: 'Scan project structure', detail: 'Inspect README, tests, docs, dependencies, and file health.' },
@@ -9,16 +8,8 @@ export function LoadingWorkbench({ repoUrl }: { repoUrl: string }) {
     { label: 'Generate mentor output', detail: 'Create action plan, resume bullets, and interview prep.' },
   ]
 
-  const [activeStep, setActiveStep] = useState(0)
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setActiveStep(1), 6000),
-      setTimeout(() => setActiveStep(2), 14000),
-      setTimeout(() => setActiveStep(3), 22000),
-    ]
-    return () => timers.forEach(clearTimeout)
-  }, [])
+  // Advance one step per poll (every ~2s). Cap at last step.
+  const activeStep = Math.min(pollCount, steps.length - 1)
 
   return (
     <section className="panel">
