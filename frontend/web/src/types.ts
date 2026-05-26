@@ -63,3 +63,8 @@ export type HistoryRecord = {
   risk_count: number
   summary: string
 }
+
+export type HistoryDetail = AnalyzeResponse & {
+  id: number
+  created_at: string
+}

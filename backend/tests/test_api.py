@@ -75,3 +75,47 @@ def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) ->
     assert len(payload["records"]) == 1
     assert payload["records"][0]["repo_url"] == "https://github.com/example/demo"
     assert payload["records"][0]["total_files"] == 2
+
+
+def test_history_detail_endpoint_returns_full_saved_report(monkeypatch, tmp_path: Path) -> None:
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
+    (repo_dir / "README.md").write_text(
+        "# Demo\n\n"
+        "This repo helps students evaluate whether a project is ready for an internship resume.\n\n"
+        "## Setup\n\nRun the backend.\n\n"
+        "## Usage\n\nAnalyze a GitHub repository.\n",
+        encoding="utf-8",
+    )
+    (repo_dir / "main.py").write_text("print('hello')\n", encoding="utf-8")
+
+    def fake_clone_repository(repo_url: str) -> Path:
+        return repo_dir
+
+    monkeypatch.setattr("app.api.routes.clone_repository", fake_clone_repository)
+    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
+
+    client = TestClient(app)
+    analyze_response = client.post("/api/analyze", json={"repo_url": "https://github.com/example/demo"})
+    history_response = client.get("/api/history")
+    record_id = history_response.json()["records"][0]["id"]
+    detail_response = client.get(f"/api/history/{record_id}")
+
+    assert analyze_response.status_code == 200
+    assert detail_response.status_code == 200
+    payload = detail_response.json()
+    assert payload["repo_url"] == "https://github.com/example/demo"
+    assert payload["analysis"]["total_files"] == 2
+    assert payload["report"]["summary"]
+    assert payload["readiness"]["score"] > 0
+    assert "mentor_summary" in payload["mentor_feedback"]
+
+
+def test_history_detail_endpoint_returns_404_for_missing_record(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
+
+    client = TestClient(app)
+    response = client.get("/api/history/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "History record not found"

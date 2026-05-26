@@ -14,7 +14,7 @@ import {
   MessageSquareText,
   Sparkles,
 } from 'lucide-react'
-import { analyzeRepository, fetchHistory } from './api'
+import { analyzeRepository, fetchHistory, fetchHistoryRecord } from './api'
 import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse, HistoryRecord, ReadinessChecklistItem } from './types'
 
@@ -29,6 +29,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('resume')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchHistory()
@@ -52,9 +53,31 @@ function App() {
     }
   }
 
+  async function handleSelectHistory(record: HistoryRecord) {
+    setLoadingHistoryId(record.id)
+    setError(null)
+    try {
+      const payload = await fetchHistoryRecord(record.id)
+      setResult(payload)
+      setRepoUrl(payload.repo_url)
+      setActiveView('dashboard')
+      setActiveTab('resume')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load saved scan')
+    } finally {
+      setLoadingHistoryId(null)
+    }
+  }
+
   return (
     <main className="workspace">
-      <Sidebar history={history} activeView={activeView} onViewChange={setActiveView} />
+      <Sidebar
+        history={history}
+        activeView={activeView}
+        loadingHistoryId={loadingHistoryId}
+        onViewChange={setActiveView}
+        onSelectHistory={handleSelectHistory}
+      />
       <section className="workbench">
         <header className="command-bar">
           <div>
@@ -102,11 +125,15 @@ function App() {
 function Sidebar({
   history,
   activeView,
+  loadingHistoryId,
   onViewChange,
+  onSelectHistory,
 }: {
   history: HistoryRecord[]
   activeView: View
+  loadingHistoryId: number | null
   onViewChange: (view: View) => void
+  onSelectHistory: (record: HistoryRecord) => void
 }) {
   return (
     <aside className="sidebar">
@@ -143,10 +170,15 @@ function Sidebar({
         ) : (
           <div className="sidebar-history">
             {history.slice(0, 4).map((item) => (
-              <div className="sidebar-history-row" key={item.id}>
+              <button
+                className="sidebar-history-row"
+                key={item.id}
+                onClick={() => onSelectHistory(item)}
+                disabled={loadingHistoryId !== null}
+              >
                 <span>{item.repo_url.replace('https://github.com/', '')}</span>
-                <small>{item.risk_count} risks</small>
-              </div>
+                <small>{loadingHistoryId === item.id ? 'Loading saved report...' : `${item.risk_count} risks`}</small>
+              </button>
             ))}
           </div>
         )}

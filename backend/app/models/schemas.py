@@ -85,3 +85,13 @@ class AnalysisHistoryRecord(BaseModel):
 
 class AnalysisHistoryResponse(BaseModel):
     records: list[AnalysisHistoryRecord]
+
+
+class AnalysisHistoryDetail(BaseModel):
+    id: int
+    repo_url: str
+    created_at: str
+    analysis: RepositoryAnalysis
+    report: ReviewReport
+    readiness: ResumeReadiness
+    mentor_feedback: MentorFeedback

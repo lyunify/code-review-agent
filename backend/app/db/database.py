@@ -3,7 +3,14 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app.models.schemas import AnalysisHistoryRecord, RepositoryAnalysis, ReviewReport
+from app.models.schemas import (
+    AnalysisHistoryDetail,
+    AnalysisHistoryRecord,
+    MentorFeedback,
+    RepositoryAnalysis,
+    ResumeReadiness,
+    ReviewReport,
+)
 
 
 class AnalysisHistoryStore:
@@ -16,6 +23,8 @@ class AnalysisHistoryStore:
         repo_url: str,
         analysis: RepositoryAnalysis,
         report: ReviewReport,
+        readiness: ResumeReadiness,
+        mentor_feedback: MentorFeedback,
     ) -> AnalysisHistoryRecord:
         created_at = datetime.now(UTC).isoformat()
         with self._connect() as connection:
@@ -30,9 +39,11 @@ class AnalysisHistoryStore:
                     risk_count,
                     summary,
                     analysis_json,
-                    report_json
+                    report_json,
+                    readiness_json,
+                    mentor_feedback_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     repo_url,
@@ -44,6 +55,8 @@ class AnalysisHistoryStore:
                     report.summary,
                     analysis.model_dump_json(),
                     report.model_dump_json(),
+                    readiness.model_dump_json(),
+                    mentor_feedback.model_dump_json(),
                 ),
             )
             connection.commit()
@@ -94,6 +107,37 @@ class AnalysisHistoryStore:
             for row in rows
         ]
 
+    def get_analysis(self, record_id: int) -> AnalysisHistoryDetail | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    id,
+                    repo_url,
+                    created_at,
+                    analysis_json,
+                    report_json,
+                    readiness_json,
+                    mentor_feedback_json
+                FROM analysis_history
+                WHERE id = ?
+                """,
+                (record_id,),
+            ).fetchone()
+
+        if row is None or row["readiness_json"] is None or row["mentor_feedback_json"] is None:
+            return None
+
+        return AnalysisHistoryDetail(
+            id=row["id"],
+            repo_url=row["repo_url"],
+            created_at=row["created_at"],
+            analysis=RepositoryAnalysis.model_validate_json(row["analysis_json"]),
+            report=ReviewReport.model_validate_json(row["report_json"]),
+            readiness=ResumeReadiness.model_validate_json(row["readiness_json"]),
+            mentor_feedback=MentorFeedback.model_validate_json(row["mentor_feedback_json"]),
+        )
+
     def _initialize(self) -> None:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
@@ -109,10 +153,20 @@ class AnalysisHistoryStore:
                     risk_count INTEGER NOT NULL,
                     summary TEXT NOT NULL,
                     analysis_json TEXT NOT NULL,
-                    report_json TEXT NOT NULL
+                    report_json TEXT NOT NULL,
+                    readiness_json TEXT,
+                    mentor_feedback_json TEXT
                 )
                 """
             )
+            existing_columns = {
+                row["name"]
+                for row in connection.execute("PRAGMA table_info(analysis_history)").fetchall()
+            }
+            if "readiness_json" not in existing_columns:
+                connection.execute("ALTER TABLE analysis_history ADD COLUMN readiness_json TEXT")
+            if "mentor_feedback_json" not in existing_columns:
+                connection.execute("ALTER TABLE analysis_history ADD COLUMN mentor_feedback_json TEXT")
             connection.commit()
 
     def _connect(self) -> sqlite3.Connection:

@@ -1,4 +1,4 @@
-import type { AnalyzeResponse, HistoryRecord } from './types'
+import type { AnalyzeResponse, HistoryDetail, HistoryRecord } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
@@ -33,6 +33,14 @@ export async function fetchHistory(): Promise<HistoryRecord[]> {
   }
   const payload = await response.json()
   return payload.records
+}
+
+export async function fetchHistoryRecord(recordId: number): Promise<HistoryDetail> {
+  const response = await fetch(`${API_BASE_URL}/api/history/${recordId}`)
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response))
+  }
+  return response.json()
 }
 
 async function getErrorMessage(response: Response): Promise<string> {
