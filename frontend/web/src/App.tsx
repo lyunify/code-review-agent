@@ -19,11 +19,13 @@ import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse, HistoryRecord, ReadinessChecklistItem } from './types'
 
 type Tab = 'resume' | 'interview' | 'risks'
+type View = 'dashboard' | 'rubric' | 'mentor'
 
 function App() {
   const [repoUrl, setRepoUrl] = useState('https://github.com/lyunify/code-review-agent')
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [history, setHistory] = useState<HistoryRecord[]>([])
+  const [activeView, setActiveView] = useState<View>('dashboard')
   const [activeTab, setActiveTab] = useState<Tab>('resume')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -40,6 +42,7 @@ function App() {
     try {
       const payload = await analyzeRepository(repoUrl)
       setResult(payload)
+      setActiveView('dashboard')
       setActiveTab('resume')
       setHistory(await fetchHistory())
     } catch (err) {
@@ -51,7 +54,7 @@ function App() {
 
   return (
     <main className="workspace">
-      <Sidebar history={history} />
+      <Sidebar history={history} activeView={activeView} onViewChange={setActiveView} />
       <section className="workbench">
         <header className="command-bar">
           <div>
@@ -81,16 +84,30 @@ function App() {
         )}
 
         {result ? (
+          activeView === 'dashboard' ? (
           <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
+          ) : activeView === 'rubric' ? (
+            <RubricView result={result} />
+          ) : (
+            <MentorView result={result} />
+          )
         ) : (
-          <EmptyWorkbench history={history} />
+          <EmptyWorkbench history={history} activeView={activeView} />
         )}
       </section>
     </main>
   )
 }
 
-function Sidebar({ history }: { history: HistoryRecord[] }) {
+function Sidebar({
+  history,
+  activeView,
+  onViewChange,
+}: {
+  history: HistoryRecord[]
+  activeView: View
+  onViewChange: (view: View) => void
+}) {
   return (
     <aside className="sidebar">
       <div className="brand-block">
@@ -102,18 +119,18 @@ function Sidebar({ history }: { history: HistoryRecord[] }) {
       </div>
 
       <nav className="side-nav">
-        <a className="active">
+        <button className={activeView === 'dashboard' ? 'active' : ''} onClick={() => onViewChange('dashboard')}>
           <Gauge size={18} />
           Review dashboard
-        </a>
-        <a>
+        </button>
+        <button className={activeView === 'rubric' ? 'active' : ''} onClick={() => onViewChange('rubric')}>
           <ClipboardList size={18} />
           Readiness rubric
-        </a>
-        <a>
+        </button>
+        <button className={activeView === 'mentor' ? 'active' : ''} onClick={() => onViewChange('mentor')}>
           <Sparkles size={18} />
           AI mentor
-        </a>
+        </button>
       </nav>
 
       <div className="sidebar-section">
@@ -135,6 +152,107 @@ function Sidebar({ history }: { history: HistoryRecord[] }) {
         )}
       </div>
     </aside>
+  )
+}
+
+function RubricView({ result }: { result: AnalyzeResponse }) {
+  const passedCount = result.readiness.checklist.filter((item) => item.passed).length
+  const totalPoints = result.readiness.checklist.reduce((sum, item) => sum + item.points, 0)
+
+  return (
+    <section className="single-view">
+      <div className="repo-header panel">
+        <div>
+          <p className="eyebrow">Readiness rubric</p>
+          <h2>What makes this project resume-ready?</h2>
+        </div>
+        <span className="status-pill ready">
+          {passedCount}/{result.readiness.checklist.length} passed
+        </span>
+      </div>
+
+      <div className="rubric-grid">
+        <article className="panel rubric-summary">
+          <h3>Rubric overview</h3>
+          <p>
+            The score combines documentation quality, testing, dependency setup, architecture signals, file health, and project structure.
+            This keeps the AI mentor grounded in measurable engineering signals instead of guessing from a repo name.
+          </p>
+          <div className="rubric-stat-row">
+            <Metric label="Score" value={`${result.readiness.score}/100`} icon={<Gauge size={18} />} />
+            <Metric label="Rubric points" value={totalPoints.toString()} icon={<ClipboardList size={18} />} />
+          </div>
+        </article>
+
+        <article className="panel">
+          <div className="panel-heading">
+            <ClipboardList size={19} />
+            <h3>Current project checklist</h3>
+          </div>
+          <div className="rubric-list">
+            {result.readiness.checklist.map((item) => (
+              <ChecklistRow item={item} key={item.name} />
+            ))}
+          </div>
+        </article>
+      </div>
+    </section>
+  )
+}
+
+function MentorView({ result }: { result: AnalyzeResponse }) {
+  return (
+    <section className="single-view">
+      <div className="repo-header panel">
+        <div>
+          <p className="eyebrow">AI mentor</p>
+          <h2>Turn this repo into an interview story.</h2>
+        </div>
+        <span className="status-pill ready">OpenAI-backed</span>
+      </div>
+
+      <section className="panel mentor-panel mentor-page">
+        <div className="panel-heading">
+          <MessageSquareText size={19} />
+          <h3>Mentor summary</h3>
+        </div>
+        <p>{result.mentor_feedback.mentor_summary}</p>
+      </section>
+
+      <div className="mentor-page-grid">
+        <article className="panel">
+          <div className="panel-heading">
+            <Sparkles size={19} />
+            <h3>Resume bullets</h3>
+          </div>
+          <div className="card-list">
+            {result.mentor_feedback.resume_bullets.map((bullet, index) => (
+              <div className="content-card" key={bullet}>
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <p>{bullet}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel">
+          <div className="panel-heading">
+            <FileQuestion size={19} />
+            <h3>Interview questions</h3>
+          </div>
+          <div className="card-list">
+            {result.mentor_feedback.interview_questions.map((question, index) => (
+              <div className="content-card" key={question}>
+                <FileQuestion size={18} />
+                <p>
+                  <strong>Q{index + 1}.</strong> {question}
+                </p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+    </section>
   )
 }
 
@@ -336,12 +454,19 @@ function ChecklistRow({ item }: { item: ReadinessChecklistItem }) {
   )
 }
 
-function EmptyWorkbench({ history }: { history: HistoryRecord[] }) {
+function EmptyWorkbench({ history, activeView }: { history: HistoryRecord[]; activeView: View }) {
+  const title =
+    activeView === 'rubric'
+      ? 'Run a repository review to inspect the readiness rubric.'
+      : activeView === 'mentor'
+        ? 'Run a repository review to generate AI mentor feedback.'
+        : 'Run a repository review to generate the workspace.'
+
   return (
     <section className="empty-workbench">
       <div className="empty-card">
         <Sparkles size={30} />
-        <h2>Run a repository review to generate the workspace.</h2>
+        <h2>{title}</h2>
         <p>
           The app will create a resume readiness score, AI mentor brief, interview prep questions, project hygiene checklist, and technical scan.
         </p>
