@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Code2,
+  FileText,
   FileQuestion,
   Gauge,
   Github,
@@ -15,15 +16,16 @@ import {
   MessageSquareText,
   Sparkles,
 } from 'lucide-react'
-import { analyzeRepository, fetchHistory, fetchHistoryRecord } from './api'
+import { analyzeRepository, fetchHistory, fetchHistoryRecord, getFriendlyErrorMessage } from './api'
 import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse, HistoryRecord, ReadinessChecklistItem } from './types'
 
 type Tab = 'resume' | 'interview' | 'risks'
 type View = 'dashboard' | 'action' | 'rubric' | 'mentor'
+const SAMPLE_REPO_URL = 'https://github.com/lyunify/code-review-agent'
 
 function App() {
-  const [repoUrl, setRepoUrl] = useState('https://github.com/lyunify/code-review-agent')
+  const [repoUrl, setRepoUrl] = useState(SAMPLE_REPO_URL)
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [history, setHistory] = useState<HistoryRecord[]>([])
   const [activeView, setActiveView] = useState<View>('dashboard')
@@ -38,20 +40,26 @@ function App() {
       .catch(() => setHistory([]))
   }, [])
 
-  async function handleAnalyze() {
+  async function handleAnalyze(nextRepoUrl = repoUrl) {
+    const targetRepoUrl = nextRepoUrl.trim()
+    setRepoUrl(targetRepoUrl)
     setIsLoading(true)
     setError(null)
     try {
-      const payload = await analyzeRepository(repoUrl)
+      const payload = await analyzeRepository(targetRepoUrl)
       setResult(payload)
       setActiveView('dashboard')
       setActiveTab('resume')
       setHistory(await fetchHistory())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analysis failed')
+      setError(getFriendlyErrorMessage(err instanceof Error ? err.message : 'Analysis failed'))
     } finally {
       setIsLoading(false)
     }
+  }
+
+  function handleTrySampleRepo() {
+    void handleAnalyze(SAMPLE_REPO_URL)
   }
 
   async function handleSelectHistory(record: HistoryRecord) {
@@ -64,7 +72,7 @@ function App() {
       setActiveView('dashboard')
       setActiveTab('resume')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load saved scan')
+      setError(getFriendlyErrorMessage(err instanceof Error ? err.message : 'Could not load saved scan'))
     } finally {
       setLoadingHistoryId(null)
     }
@@ -93,7 +101,7 @@ function App() {
               onChange={(event) => setRepoUrl(event.target.value)}
               placeholder="github.com/username/project"
             />
-            <button onClick={handleAnalyze} disabled={isLoading || repoUrl.trim().length === 0}>
+            <button onClick={() => void handleAnalyze()} disabled={isLoading || repoUrl.trim().length === 0}>
               {isLoading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />}
               Analyze
             </button>
@@ -103,11 +111,16 @@ function App() {
         {error && (
           <div className="error-banner">
             <AlertTriangle size={18} />
-            {error}
+            <div>
+              <strong>Analysis could not start</strong>
+              <p>{error}</p>
+            </div>
           </div>
         )}
 
-        {result ? (
+        {isLoading ? (
+          <LoadingWorkbench repoUrl={repoUrl} />
+        ) : result ? (
           activeView === 'dashboard' ? (
           <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
           ) : activeView === 'action' ? (
@@ -118,7 +131,7 @@ function App() {
             <MentorView result={result} />
           )
         ) : (
-          <EmptyWorkbench history={history} activeView={activeView} />
+          <EmptyWorkbench history={history} activeView={activeView} onTrySampleRepo={handleTrySampleRepo} />
         )}
       </section>
     </main>
@@ -535,7 +548,44 @@ function ChecklistRow({ item }: { item: ReadinessChecklistItem }) {
   )
 }
 
-function EmptyWorkbench({ history, activeView }: { history: HistoryRecord[]; activeView: View }) {
+function LoadingWorkbench({ repoUrl }: { repoUrl: string }) {
+  const steps = [
+    { label: 'Clone repository', detail: 'Fetch public GitHub files for analysis.' },
+    { label: 'Scan project structure', detail: 'Inspect README, tests, docs, dependencies, and file health.' },
+    { label: 'Calculate readiness', detail: 'Score the repo against the SDE intern resume rubric.' },
+    { label: 'Generate mentor output', detail: 'Create action plan, resume bullets, and interview prep.' },
+  ]
+
+  return (
+    <section className="loading-workbench panel">
+      <div>
+        <p className="eyebrow">Analysis pipeline</p>
+        <h2>Reviewing {repoUrl.replace('https://github.com/', '')}</h2>
+      </div>
+      <div className="loading-steps">
+        {steps.map((step, index) => (
+          <div className="loading-step" key={step.label}>
+            <span>{index === 0 ? <Loader2 className="spin" size={17} /> : index + 1}</span>
+            <div>
+              <strong>{step.label}</strong>
+              <p>{step.detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function EmptyWorkbench({
+  history,
+  activeView,
+  onTrySampleRepo,
+}: {
+  history: HistoryRecord[]
+  activeView: View
+  onTrySampleRepo: () => void
+}) {
   const title =
     activeView === 'rubric'
       ? 'Run a repository review to inspect the readiness rubric.'
@@ -551,8 +601,32 @@ function EmptyWorkbench({ history, activeView }: { history: HistoryRecord[]; act
         <Sparkles size={30} />
         <h2>{title}</h2>
         <p>
-          The app will create a resume readiness score, AI mentor brief, interview prep questions, project hygiene checklist, and technical scan.
+          Start with a public GitHub repository to generate a readiness score, prioritized action plan, resume bullets,
+          interview prep, and a saved report you can revisit later.
         </p>
+        <div className="empty-actions">
+          <button onClick={onTrySampleRepo}>
+            <Github size={17} />
+            Try sample repo
+          </button>
+        </div>
+        <div className="empty-feature-grid">
+          <div>
+            <Gauge size={19} />
+            <strong>Score</strong>
+            <span>Resume-readiness rubric</span>
+          </div>
+          <div>
+            <ListChecks size={19} />
+            <strong>Action plan</strong>
+            <span>Prioritized next fixes</span>
+          </div>
+          <div>
+            <FileText size={19} />
+            <strong>Report</strong>
+            <span>Markdown export</span>
+          </div>
+        </div>
         {history.length > 0 && <span>{history.length} previous scans are available in the sidebar.</span>}
       </div>
     </section>

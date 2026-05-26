@@ -239,7 +239,7 @@ input {
 
 .error-banner {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   margin-bottom: 16px;
   padding: 14px 16px;
@@ -247,6 +247,17 @@ input {
   border-radius: 8px;
   background: #fff7f7;
   color: #991b1b;
+}
+
+.error-banner strong,
+.error-banner p {
+  margin: 0;
+}
+
+.error-banner p {
+  margin-top: 3px;
+  color: #7f1d1d;
+  line-height: 1.45;
 }
 
 .dashboard-grid {
@@ -720,8 +731,59 @@ input {
   min-height: 58vh;
 }
 
+.loading-workbench {
+  display: grid;
+  gap: 20px;
+  max-width: 920px;
+}
+
+.loading-workbench h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #111827;
+  font-size: clamp(1.45rem, 2.2vw, 2.3rem);
+}
+
+.loading-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.loading-step {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.loading-step > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.loading-step strong {
+  display: block;
+  margin-top: 12px;
+  color: #111827;
+}
+
+.loading-step p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .empty-card {
-  max-width: 620px;
+  max-width: 760px;
   padding: 34px;
   text-align: center;
 }
@@ -740,6 +802,56 @@ input {
 .empty-card span {
   color: #2563eb;
   font-weight: 800;
+}
+
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  margin: 22px 0;
+}
+
+.empty-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 15px;
+  background: #111827;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.empty-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.empty-feature-grid div {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 10px;
+  background: #f8fafc;
+}
+
+.empty-feature-grid svg {
+  color: #2563eb;
+}
+
+.empty-feature-grid strong {
+  color: #111827;
+}
+
+.empty-feature-grid span {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .spin {
@@ -768,7 +880,9 @@ input {
   .action-step,
   .action-step dl,
   .command-bar,
-  .metric-grid {
+  .metric-grid,
+  .loading-steps,
+  .empty-feature-grid {
     grid-template-columns: 1fr;
   }
 

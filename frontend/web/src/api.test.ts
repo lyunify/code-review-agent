@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchHistoryRecord, normalizeRepoUrl } from './api'
+import { fetchHistoryRecord, getFriendlyErrorMessage, normalizeRepoUrl } from './api'
 
 describe('normalizeRepoUrl', () => {
   it('adds https scheme when missing', () => {
@@ -29,6 +29,7 @@ describe('fetchHistoryRecord', () => {
       report: { summary: 'Saved report', recommendations: [] },
       readiness: { score: 88, status: 'Almost ready', checklist: [], priority_fixes: [] },
       mentor_feedback: { mentor_summary: 'Saved mentor note', resume_bullets: [], interview_questions: [], next_steps: [] },
+      action_plan: { items: [] },
     }
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -38,5 +39,25 @@ describe('fetchHistoryRecord', () => {
 
     await expect(fetchHistoryRecord(7)).resolves.toEqual(payload)
     expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/api/history/7')
+  })
+})
+
+describe('getFriendlyErrorMessage', () => {
+  it('explains backend connectivity failures', () => {
+    expect(getFriendlyErrorMessage('Failed to fetch')).toBe(
+      'Cannot reach the backend API. Make sure FastAPI is running on http://127.0.0.1:8000.',
+    )
+  })
+
+  it('explains invalid repository URLs', () => {
+    expect(getFriendlyErrorMessage('Input should be a valid URL')).toBe(
+      'Enter a public GitHub repository URL, for example https://github.com/owner/project.',
+    )
+  })
+
+  it('preserves specific backend messages when no product copy matches', () => {
+    expect(getFriendlyErrorMessage('Repository does not contain a README file.')).toBe(
+      'Repository does not contain a README file.',
+    )
   })
 })

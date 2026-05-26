@@ -43,6 +43,23 @@ export async function fetchHistoryRecord(recordId: number): Promise<HistoryDetai
   return response.json()
 }
 
+export function getFriendlyErrorMessage(message: string): string {
+  const normalized = message.toLowerCase()
+  if (normalized.includes('failed to fetch') || normalized.includes('networkerror')) {
+    return 'Cannot reach the backend API. Make sure FastAPI is running on http://127.0.0.1:8000.'
+  }
+  if (normalized.includes('valid url') || normalized.includes('url scheme')) {
+    return 'Enter a public GitHub repository URL, for example https://github.com/owner/project.'
+  }
+  if (normalized.includes('repository not found') || normalized.includes('could not read from remote repository')) {
+    return 'Could not access that repository. Make sure it is public and the URL is correct.'
+  }
+  if (normalized.includes('openai_api_key') || normalized.includes('api key')) {
+    return 'AI mentor feedback needs an OpenAI API key in backend/.env, but the static scanner can still run.'
+  }
+  return message
+}
+
 async function getErrorMessage(response: Response): Promise<string> {
   try {
     const payload = await response.json()
