@@ -370,7 +370,7 @@ input {
 }
 
 .metric {
-  min-height: 142px;
+  min-height: 122px;
   padding: 16px;
   border-color: #dbe2ec;
 }
@@ -554,6 +554,7 @@ input {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);
   gap: 18px;
+  border-left: 4px solid #2563eb;
 }
 
 .action-step-index {
@@ -596,6 +597,13 @@ input {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
+}
+
+.action-step dl > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
 }
 
 .action-step dt {
@@ -888,13 +896,47 @@ input {
   .sidebar {
     position: static;
     height: auto;
+    padding: 14px 16px;
+  }
+
+  .brand-block {
+    padding-bottom: 12px;
+  }
+
+  .side-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 12px 0 0;
+  }
+
+  .side-nav button {
+    justify-content: center;
+    min-height: 46px;
+    padding: 9px 8px;
+    font-size: 0.78rem;
+  }
+
+  .sidebar-section {
+    display: none;
+  }
+
+  .workbench {
+    padding: 16px;
+  }
+
+  .command-bar {
+    gap: 14px;
+    margin-bottom: 12px;
+    padding: 14px;
+  }
+
+  .command-bar h1 {
+    font-size: 2rem;
   }
 
   .dashboard-grid,
   .rubric-grid,
   .mentor-page-grid,
-  .action-step,
-  .action-step dl,
   .command-bar,
   .loading-steps,
   .empty-feature-grid {
@@ -903,6 +945,14 @@ input {
 
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .repo-header {
+    min-height: auto;
+  }
+
+  .metric {
+    min-height: 112px;
   }
 
   .repo-command {
@@ -919,6 +969,15 @@ input {
 }
 
 @media (max-width: 560px) {
+  .side-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .action-step,
+  .action-step dl {
+    grid-template-columns: 1fr;
+  }
+
   .metric-grid {
     grid-template-columns: 1fr;
   }
