@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Shades</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    background: #111;
+    color: #fff;
+    padding: 28px 24px 80px;
+  }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 32px; }
+
+  .cols { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  .col {
+    flex: 1; min-width: 160px;
+    cursor: pointer;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .col:hover { transform: translateY(-2px); }
+  .col.selected { border-color: #fff; }
+  .col.selected::after {
+    content: '✓';
+    position: absolute; top: 10px; right: 10px;
+    background: #fff; color: #000;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+
+  .swatch {
+    height: 90px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 900; letter-spacing: -1px;
+  }
+
+  .mock {
+    background: #0f1512;
+    padding: 14px;
+  }
+  .mock-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 12px; border-bottom: 1px solid #1e2e28; margin-bottom: 14px;
+  }
+  .mock-logo { font-weight: 800; font-size: 13px; color: #e8f0ee; }
+  .mock-nav-btn {
+    font-size: 10px; font-weight: 600;
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid;
+  }
+  .mock-score { font-size: 36px; font-weight: 900; letter-spacing: -2px; line-height: 1; margin-bottom: 4px; }
+  .mock-label { font-size: 10px; color: #8aa8a0; margin-bottom: 10px; }
+  .mock-pill {
+    font-size: 9px; font-weight: 700;
+    padding: 3px 9px; border-radius: 20px; display: inline-block; margin-bottom: 10px;
+  }
+  .mock-input {
+    background: #1a2a24; border-radius: 7px; padding: 7px 10px;
+    font-size: 9px; color: #4a6b62; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .mock-btn {
+    font-size: 9px; font-weight: 700;
+    padding: 4px 10px; border-radius: 6px;
+  }
+  .meta { background: #131a17; padding: 12px 14px; }
+  .hex { font-size: 12px; font-weight: 700; font-family: monospace; color: #fff; }
+  .vibe { font-size: 11px; color: #555; margin-top: 2px; }
+</style>
+<script>
+function pick(el) {
+  document.querySelectorAll('.col').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const choice = el.dataset.choice;
+  const hex = el.dataset.hex;
+  try {
+    window.parent?.postMessage({ type: 'click', choice, text: hex }, '*');
+  } catch(e) {}
+}
+</script>
+</head>
+<body>
+<h1>Which blue?</h1>
+<p class="sub">All on your dark #0f1512 background — pick the closest to what you had in mind</p>
+
+<div class="cols">
+
+  <!-- A: Cornflower blue ~browser URL color -->
+  <div class="col" data-choice="a" data-hex="#6B9FD4" onclick="pick(this)">
+    <div class="swatch" style="background:#6B9FD4; color:#0f1512;">87</div>
+    <div class="mock">
+      <div class="mock-nav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn" style="color:#6B9FD4;border-color:#1e3a5f;">History</span>
+      </div>
+      <div class="mock-score" style="color:#6B9FD4;">87</div>
+      <div class="mock-label">lyunify / code-review-agent</div>
+      <div class="mock-pill" style="background:#0d2140;color:#6B9FD4;">Almost Ready</div>
+      <div class="mock-input">
+        github.com/username/project
+        <span class="mock-btn" style="background:#6B9FD4;color:#0f1512;">Analyze</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="hex">#6B9FD4</div>
+      <div class="vibe">Cornflower — closest to browser URL blue</div>
+    </div>
+  </div>
+
+  <!-- B: Slightly brighter/lighter -->
+  <div class="col" data-choice="b" data-hex="#7AB8E8" onclick="pick(this)">
+    <div class="swatch" style="background:#7AB8E8; color:#0f1512;">87</div>
+    <div class="mock">
+      <div class="mock-nav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn" style="color:#7AB8E8;border-color:#1a3a4a;">History</span>
+      </div>
+      <div class="mock-score" style="color:#7AB8E8;">87</div>
+      <div class="mock-label">lyunify / code-review-agent</div>
+      <div class="mock-pill" style="background:#0c2233;color:#7AB8E8;">Almost Ready</div>
+      <div class="mock-input">
+        github.com/username/project
+        <span class="mock-btn" style="background:#7AB8E8;color:#0f1512;">Analyze</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="hex">#7AB8E8</div>
+      <div class="vibe">Sky blue — brighter, more airy</div>
+    </div>
+  </div>
+
+  <!-- C: More saturated, vivid -->
+  <div class="col" data-choice="c" data-hex="#4D9EE8" onclick="pick(this)">
+    <div class="swatch" style="background:#4D9EE8; color:#fff;">87</div>
+    <div class="mock">
+      <div class="mock-nav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn" style="color:#4D9EE8;border-color:#0f3055;">History</span>
+      </div>
+      <div class="mock-score" style="color:#4D9EE8;">87</div>
+      <div class="mock-label">lyunify / code-review-agent</div>
+      <div class="mock-pill" style="background:#091e33;color:#4D9EE8;">Almost Ready</div>
+      <div class="mock-input">
+        github.com/username/project
+        <span class="mock-btn" style="background:#4D9EE8;color:#fff;">Analyze</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="hex">#4D9EE8</div>
+      <div class="vibe">Vivid blue — more punch, less muted</div>
+    </div>
+  </div>
+
+  <!-- D: Periwinkle (slightly purple-tinted) -->
+  <div class="col" data-choice="d" data-hex="#8BA7D9" onclick="pick(this)">
+    <div class="swatch" style="background:#8BA7D9; color:#0f1512;">87</div>
+    <div class="mock">
+      <div class="mock-nav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn" style="color:#8BA7D9;border-color:#222a40;">History</span>
+      </div>
+      <div class="mock-score" style="color:#8BA7D9;">87</div>
+      <div class="mock-label">lyunify / code-review-agent</div>
+      <div class="mock-pill" style="background:#131826;color:#8BA7D9;">Almost Ready</div>
+      <div class="mock-input">
+        github.com/username/project
+        <span class="mock-btn" style="background:#8BA7D9;color:#0f1512;">Analyze</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="hex">#8BA7D9</div>
+      <div class="vibe">Periwinkle — purple-tinted, softer</div>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#444;font-size:12px;margin-top:24px;text-align:center;">Click a card to select · or describe in terminal</p>
+</body>
+</html>

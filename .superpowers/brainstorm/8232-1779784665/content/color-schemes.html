@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Light Color Scheme Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    background: #0d0d0d;
+    color: #fff;
+    padding: 32px 24px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #888; font-size: 14px; margin-bottom: 36px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .scheme {
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .scheme:hover { transform: translateY(-2px); }
+  .scheme.selected { border-color: #fff; }
+  .scheme.selected::after {
+    content: '✓ Selected';
+    position: absolute;
+    top: 12px; right: 12px;
+    background: #fff;
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 10px;
+    background: #1a1a1a;
+  }
+  .letter {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: #333;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px;
+  }
+  .scheme-name { font-weight: 600; font-size: 15px; }
+  .scheme-vibe { font-size: 12px; color: #666; margin-left: auto; font-style: italic; }
+
+  /* MOCKUP STYLES */
+  .mockup {
+    padding: 20px;
+    font-family: -apple-system, sans-serif;
+  }
+
+  /* === A: Pure White + Electric Indigo === */
+  .mockup-a {
+    background: #ffffff;
+    color: #111;
+  }
+  .mockup-a .m-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 16px; border-bottom: 1px solid #eee; margin-bottom: 20px;
+  }
+  .mockup-a .m-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; color: #111; }
+  .mockup-a .m-nav-btn {
+    font-size: 12px; background: #f3f0ff; color: #5b21b6;
+    border-radius: 8px; padding: 5px 12px; font-weight: 600;
+  }
+  .mockup-a .m-hero { margin-bottom: 18px; }
+  .mockup-a .m-hero h2 { font-size: 20px; font-weight: 800; color: #111; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 4px; }
+  .mockup-a .m-hero p { font-size: 12px; color: #888; }
+  .mockup-a .m-input {
+    display: flex; align-items: center; gap: 8px;
+    background: #f9f9f9; border: 1.5px solid #e0e0e0;
+    border-radius: 10px; padding: 9px 14px; margin-bottom: 18px;
+  }
+  .mockup-a .m-input span { font-size: 11px; color: #aaa; flex: 1; }
+  .mockup-a .m-btn {
+    background: #5b21b6; color: #fff;
+    font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 8px;
+  }
+  .mockup-a .m-score-panel {
+    background: #f3f0ff; border-radius: 12px; padding: 16px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+  }
+  .mockup-a .m-score-num { font-size: 44px; font-weight: 900; color: #5b21b6; letter-spacing: -2px; line-height: 1; }
+  .mockup-a .m-score-info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .mockup-a .m-score-info p { font-size: 11px; color: #888; margin-top: 2px; }
+  .mockup-a .m-pill {
+    background: #ede9fe; color: #5b21b6;
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 6px;
+  }
+  .mockup-a .m-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mockup-a .m-card { background: #f9f9f9; border-radius: 8px; padding: 10px; }
+  .mockup-a .m-card .val { font-size: 16px; font-weight: 800; color: #111; }
+  .mockup-a .m-card .key { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+  /* === B: Light Gray + Vivid Coral === */
+  .mockup-b {
+    background: #f5f4f2;
+    color: #111;
+  }
+  .mockup-b .m-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 16px; border-bottom: 1px solid #e8e6e1; margin-bottom: 20px;
+  }
+  .mockup-b .m-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; color: #111; }
+  .mockup-b .m-nav-btn {
+    font-size: 12px; background: #fff0ed; color: #e84040;
+    border-radius: 8px; padding: 5px 12px; font-weight: 600;
+  }
+  .mockup-b .m-hero { margin-bottom: 18px; }
+  .mockup-b .m-hero h2 { font-size: 20px; font-weight: 800; color: #111; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 4px; }
+  .mockup-b .m-hero p { font-size: 12px; color: #888; }
+  .mockup-b .m-input {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1.5px solid #ddd;
+    border-radius: 10px; padding: 9px 14px; margin-bottom: 18px;
+  }
+  .mockup-b .m-input span { font-size: 11px; color: #aaa; flex: 1; }
+  .mockup-b .m-btn {
+    background: #e84040; color: #fff;
+    font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 8px;
+  }
+  .mockup-b .m-score-panel {
+    background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .mockup-b .m-score-num { font-size: 44px; font-weight: 900; color: #e84040; letter-spacing: -2px; line-height: 1; }
+  .mockup-b .m-score-info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .mockup-b .m-score-info p { font-size: 11px; color: #888; margin-top: 2px; }
+  .mockup-b .m-pill {
+    background: #fff0ed; color: #e84040;
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 6px;
+  }
+  .mockup-b .m-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mockup-b .m-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
+  .mockup-b .m-card .val { font-size: 16px; font-weight: 800; color: #111; }
+  .mockup-b .m-card .key { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+  /* === C: Near-White + Electric Blue (Vercel-esque) === */
+  .mockup-c {
+    background: #fafafa;
+    color: #111;
+  }
+  .mockup-c .m-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 16px; border-bottom: 1px solid #eee; margin-bottom: 20px;
+  }
+  .mockup-c .m-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; color: #111; }
+  .mockup-c .m-nav-btn {
+    font-size: 12px; background: #111; color: #fff;
+    border-radius: 8px; padding: 5px 12px; font-weight: 600;
+  }
+  .mockup-c .m-hero { margin-bottom: 18px; }
+  .mockup-c .m-hero h2 { font-size: 20px; font-weight: 800; color: #111; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 4px; }
+  .mockup-c .m-hero p { font-size: 12px; color: #888; }
+  .mockup-c .m-input {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1.5px solid #e0e0e0;
+    border-radius: 10px; padding: 9px 14px; margin-bottom: 18px;
+  }
+  .mockup-c .m-input span { font-size: 11px; color: #aaa; flex: 1; }
+  .mockup-c .m-btn {
+    background: #111; color: #fff;
+    font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 8px;
+  }
+  .mockup-c .m-score-panel {
+    background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .mockup-c .m-score-num { font-size: 44px; font-weight: 900; color: #0070f3; letter-spacing: -2px; line-height: 1; }
+  .mockup-c .m-score-info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .mockup-c .m-score-info p { font-size: 11px; color: #888; margin-top: 2px; }
+  .mockup-c .m-pill {
+    background: #e8f1ff; color: #0070f3;
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 6px;
+  }
+  .mockup-c .m-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mockup-c .m-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
+  .mockup-c .m-card .val { font-size: 16px; font-weight: 800; color: #0070f3; }
+  .mockup-c .m-card .key { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+  /* === D: Soft Blue-Gray + Lime-Green === */
+  .mockup-d {
+    background: #f0f4f8;
+    color: #111;
+  }
+  .mockup-d .m-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 16px; border-bottom: 1px solid #dde4ed; margin-bottom: 20px;
+  }
+  .mockup-d .m-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; color: #111; }
+  .mockup-d .m-nav-btn {
+    font-size: 12px; background: #edfce8; color: #22a038;
+    border-radius: 8px; padding: 5px 12px; font-weight: 600;
+  }
+  .mockup-d .m-hero { margin-bottom: 18px; }
+  .mockup-d .m-hero h2 { font-size: 20px; font-weight: 800; color: #111; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 4px; }
+  .mockup-d .m-hero p { font-size: 12px; color: #888; }
+  .mockup-d .m-input {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1.5px solid #d0d9e5;
+    border-radius: 10px; padding: 9px 14px; margin-bottom: 18px;
+  }
+  .mockup-d .m-input span { font-size: 11px; color: #aaa; flex: 1; }
+  .mockup-d .m-btn {
+    background: #22a038; color: #fff;
+    font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 8px;
+  }
+  .mockup-d .m-score-panel {
+    background: #fff; border: 1px solid #dde4ed; border-radius: 12px; padding: 16px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+  }
+  .mockup-d .m-score-num { font-size: 44px; font-weight: 900; color: #22a038; letter-spacing: -2px; line-height: 1; }
+  .mockup-d .m-score-info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .mockup-d .m-score-info p { font-size: 11px; color: #888; margin-top: 2px; }
+  .mockup-d .m-pill {
+    background: #edfce8; color: #22a038;
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 6px;
+  }
+  .mockup-d .m-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mockup-d .m-card { background: #fff; border: 1px solid #dde4ed; border-radius: 8px; padding: 10px; }
+  .mockup-d .m-card .val { font-size: 16px; font-weight: 800; color: #111; }
+  .mockup-d .m-card .key { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+  .footer-note {
+    text-align: center; color: #555; font-size: 13px; margin-top: 28px;
+  }
+</style>
+<script>
+function toggleSelect(el) {
+  document.querySelectorAll('.scheme').forEach(s => s.classList.remove('selected'));
+  el.classList.toggle('selected');
+  if (window.parent && window.parent !== window) {
+    const choice = el.dataset.choice;
+    window.parent.postMessage({ type: 'click', choice, text: el.querySelector('.scheme-name').textContent }, '*');
+  }
+}
+</script>
+</head>
+<body>
+<h1>Light color scheme options</h1>
+<p class="sub">Four directions — click to select the one that resonates most</p>
+
+<div class="grid">
+
+  <!-- A -->
+  <div class="scheme" data-choice="a" onclick="toggleSelect(this)">
+    <div class="label-row">
+      <div class="letter">A</div>
+      <span class="scheme-name">White + Electric Indigo</span>
+      <span class="scheme-vibe">Linear / Notion</span>
+    </div>
+    <div class="mockup mockup-a">
+      <div class="m-nav">
+        <span class="m-logo">repo-ready.</span>
+        <span class="m-nav-btn">History</span>
+      </div>
+      <div class="m-hero">
+        <h2>Is your repo interview-ready?</h2>
+        <p>Paste a public GitHub URL to get your SDE intern readiness score.</p>
+      </div>
+      <div class="m-input">
+        <span>github.com/username/project</span>
+        <span class="m-btn">Analyze</span>
+      </div>
+      <div class="m-score-panel">
+        <div class="m-score-num">87</div>
+        <div class="m-score-info">
+          <h3>lyunify / code-review-agent</h3>
+          <p>Reviewed just now</p>
+          <span class="m-pill">Almost Ready</span>
+        </div>
+      </div>
+      <div class="m-grid">
+        <div class="m-card"><div class="val">24</div><div class="key">Files</div></div>
+        <div class="m-card"><div class="val">TypeScript</div><div class="key">Language</div></div>
+        <div class="m-card"><div class="val">MIT</div><div class="key">License</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="scheme" data-choice="b" onclick="toggleSelect(this)">
+    <div class="label-row">
+      <div class="letter">B</div>
+      <span class="scheme-name">Warm Gray + Coral Red</span>
+      <span class="scheme-vibe">Raycast / Modern SaaS</span>
+    </div>
+    <div class="mockup mockup-b">
+      <div class="m-nav">
+        <span class="m-logo">repo-ready.</span>
+        <span class="m-nav-btn">History</span>
+      </div>
+      <div class="m-hero">
+        <h2>Is your repo interview-ready?</h2>
+        <p>Paste a public GitHub URL to get your SDE intern readiness score.</p>
+      </div>
+      <div class="m-input">
+        <span>github.com/username/project</span>
+        <span class="m-btn">Analyze</span>
+      </div>
+      <div class="m-score-panel">
+        <div class="m-score-num">87</div>
+        <div class="m-score-info">
+          <h3>lyunify / code-review-agent</h3>
+          <p>Reviewed just now</p>
+          <span class="m-pill">Almost Ready</span>
+        </div>
+      </div>
+      <div class="m-grid">
+        <div class="m-card"><div class="val">24</div><div class="key">Files</div></div>
+        <div class="m-card"><div class="val">TypeScript</div><div class="key">Language</div></div>
+        <div class="m-card"><div class="val">MIT</div><div class="key">License</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="scheme" data-choice="c" onclick="toggleSelect(this)">
+    <div class="label-row">
+      <div class="letter">C</div>
+      <span class="scheme-name">Near-White + Electric Blue</span>
+      <span class="scheme-vibe">Vercel / GitHub</span>
+    </div>
+    <div class="mockup mockup-c">
+      <div class="m-nav">
+        <span class="m-logo">repo-ready.</span>
+        <span class="m-nav-btn">History</span>
+      </div>
+      <div class="m-hero">
+        <h2>Is your repo interview-ready?</h2>
+        <p>Paste a public GitHub URL to get your SDE intern readiness score.</p>
+      </div>
+      <div class="m-input">
+        <span>github.com/username/project</span>
+        <span class="m-btn">Analyze</span>
+      </div>
+      <div class="m-score-panel">
+        <div class="m-score-num">87</div>
+        <div class="m-score-info">
+          <h3>lyunify / code-review-agent</h3>
+          <p>Reviewed just now</p>
+          <span class="m-pill">Almost Ready</span>
+        </div>
+      </div>
+      <div class="m-grid">
+        <div class="m-card"><div class="val">24</div><div class="key">Files</div></div>
+        <div class="m-card"><div class="val">TypeScript</div><div class="key">Language</div></div>
+        <div class="m-card"><div class="val">MIT</div><div class="key">License</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D -->
+  <div class="scheme" data-choice="d" onclick="toggleSelect(this)">
+    <div class="label-row">
+      <div class="letter">D</div>
+      <span class="scheme-name">Blue-Gray + Vivid Green</span>
+      <span class="scheme-vibe">Fresh / Energetic</span>
+    </div>
+    <div class="mockup mockup-d">
+      <div class="m-nav">
+        <span class="m-logo">repo-ready.</span>
+        <span class="m-nav-btn">History</span>
+      </div>
+      <div class="m-hero">
+        <h2>Is your repo interview-ready?</h2>
+        <p>Paste a public GitHub URL to get your SDE intern readiness score.</p>
+      </div>
+      <div class="m-input">
+        <span>github.com/username/project</span>
+        <span class="m-btn">Analyze</span>
+      </div>
+      <div class="m-score-panel">
+        <div class="m-score-num">87</div>
+        <div class="m-score-info">
+          <h3>lyunify / code-review-agent</h3>
+          <p>Reviewed just now</p>
+          <span class="m-pill">Almost Ready</span>
+        </div>
+      </div>
+      <div class="m-grid">
+        <div class="m-card"><div class="val">24</div><div class="key">Files</div></div>
+        <div class="m-card"><div class="val">TypeScript</div><div class="key">Language</div></div>
+        <div class="m-card"><div class="val">MIT</div><div class="key">License</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer-note">Click a card to select · You can also just describe your preference in the terminal</p>
+</body>
+</html>

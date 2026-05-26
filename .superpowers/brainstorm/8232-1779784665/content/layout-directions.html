@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layout Directions</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    padding: 28px 20px 80px;
+  }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
+  .sub { color: #555; font-size: 13px; margin-bottom: 30px; }
+
+  .layout-grid { display: flex; flex-direction: column; gap: 20px; }
+
+  .option {
+    border-radius: 16px;
+    border: 2px solid #222;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .option:hover { border-color: #444; transform: translateY(-1px); }
+  .option.selected { border-color: #fff; }
+  .option.selected::after {
+    content: '✓ Selected';
+    position: absolute; top: 14px; right: 14px;
+    background: #fff; color: #000;
+    font-size: 11px; font-weight: 800;
+    padding: 4px 12px; border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .opt-header {
+    background: #161616;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid #222;
+  }
+  .opt-letter {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: #222; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px;
+  }
+  .opt-title { font-weight: 700; font-size: 15px; }
+  .opt-vibe { font-size: 12px; color: #555; margin-left: auto; font-style: italic; }
+
+  /* ACCENT */
+  .acc { color: #4D9EE8; }
+  .acc-bg { background: rgba(77,158,232,0.12); }
+  .acc-border { border-color: rgba(77,158,232,0.3) !important; }
+
+  /* ===== MOCKUP SHARED ===== */
+  .mock {
+    background: #0d1117;
+    padding: 20px;
+    font-family: -apple-system, sans-serif;
+  }
+  .mock-topnav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; border-bottom: 1px solid #21262d; margin-bottom: 18px;
+  }
+  .mock-logo { font-weight: 800; font-size: 14px; }
+  .mock-history { font-size: 10px; color: #4D9EE8; border: 1px solid rgba(77,158,232,0.3); padding: 4px 10px; border-radius: 6px; }
+  .mock-tabs {
+    display: flex; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid #21262d; margin-bottom: 18px;
+  }
+  .mock-tab { font-size: 10px; padding: 5px 12px; border-radius: 6px; color: #8b949e; }
+  .mock-tab.active { background: #1c2128; color: #e6edf3; font-weight: 600; }
+
+  /* ===== A: Current (for comparison) ===== */
+  .mock-a .score-hero {
+    display: flex; align-items: center; gap: 16px;
+    background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 16px; margin-bottom: 10px;
+  }
+  .mock-a .score-num { font-size: 42px; font-weight: 900; color: #4D9EE8; letter-spacing: -2px; line-height: 1; min-width: 60px; }
+  .mock-a .score-repo { font-size: 10px; color: #8b949e; margin-bottom: 6px; }
+  .mock-a .score-chips { display: flex; gap: 4px; }
+  .mock-a .chip { font-size: 9px; border: 1px solid #21262d; border-radius: 20px; padding: 2px 8px; color: #8b949e; }
+  .mock-a .metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 10px; }
+  .mock-a .metric { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 10px; text-align: center; }
+  .mock-a .metric .val { font-size: 16px; font-weight: 800; color: #4D9EE8; }
+  .mock-a .metric .key { font-size: 9px; color: #484f58; margin-top: 2px; }
+  .mock-a .panel { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+  .mock-a .panel-title { font-size: 11px; font-weight: 700; color: #e6edf3; margin-bottom: 8px; }
+  .mock-a .text-block { font-size: 10px; color: #8b949e; line-height: 1.5; }
+  .mock-a .problem-label { font-size: 10px; color: #f87171; background: rgba(248,113,113,0.1); padding: 3px 8px; border-radius: 4px; display: inline-block; margin-top: 6px; }
+
+  /* ===== B: Big Score Hero ===== */
+  .mock-b .hero {
+    text-align: center; padding: 28px 20px 24px; border-bottom: 1px solid #21262d; margin-bottom: 20px;
+  }
+  .mock-b .big-score {
+    font-size: 96px; font-weight: 900; color: #4D9EE8; letter-spacing: -6px; line-height: 0.9;
+    margin-bottom: 10px;
+  }
+  .mock-b .status-line { font-size: 13px; font-weight: 700; color: #4D9EE8; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .mock-b .repo-line { font-size: 11px; color: #484f58; }
+  .mock-b .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mock-b .col-head { font-size: 10px; font-weight: 700; color: #4D9EE8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(77,158,232,0.2); }
+  .mock-b .item { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+  .mock-b .item-num { font-size: 10px; font-weight: 800; color: #4D9EE8; min-width: 14px; margin-top: 1px; }
+  .mock-b .item-text { font-size: 10px; color: #8b949e; line-height: 1.4; }
+
+  /* ===== C: Split Hero ===== */
+  .mock-c .hero-split {
+    display: grid; grid-template-columns: auto 1fr; gap: 0; margin-bottom: 16px;
+    border: 1px solid #21262d; border-radius: 10px; overflow: hidden;
+  }
+  .mock-c .hero-left {
+    padding: 24px 20px; background: rgba(77,158,232,0.06); border-right: 1px solid #21262d;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px;
+  }
+  .mock-c .big-num { font-size: 64px; font-weight: 900; color: #4D9EE8; letter-spacing: -3px; line-height: 1; }
+  .mock-c .out-of { font-size: 10px; color: #484f58; margin-top: 2px; text-align: center; }
+  .mock-c .status-pill { font-size: 9px; font-weight: 700; background: rgba(77,158,232,0.15); color: #4D9EE8; padding: 3px 10px; border-radius: 20px; margin-top: 8px; }
+  .mock-c .hero-right { padding: 16px 18px; }
+  .mock-c .repo-name { font-size: 13px; font-weight: 700; color: #e6edf3; margin-bottom: 3px; }
+  .mock-c .repo-sub { font-size: 10px; color: #484f58; margin-bottom: 14px; }
+  .mock-c .mentor-quote { font-size: 11px; color: #8b949e; line-height: 1.5; border-left: 2px solid rgba(77,158,232,0.4); padding-left: 10px; margin-bottom: 12px; }
+  .mock-c .action-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mock-c .action-chip { font-size: 9px; background: #1c2128; border: 1px solid #21262d; border-radius: 6px; padding: 4px 8px; color: #8b949e; }
+  .mock-c .bullets { margin-top: 14px; }
+  .mock-c .bullet { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #21262d; align-items: flex-start; }
+  .mock-c .bullet-n { font-size: 10px; font-weight: 800; color: #4D9EE8; min-width: 16px; }
+  .mock-c .bullet-t { font-size: 10px; color: #8b949e; line-height: 1.4; }
+
+  /* ===== D: Minimal / Linear ===== */
+  .mock-d .score-row {
+    display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px;
+  }
+  .mock-d .big-n { font-size: 64px; font-weight: 900; color: #4D9EE8; letter-spacing: -3px; line-height: 1; }
+  .mock-d .status-badge { font-size: 11px; font-weight: 700; color: #4D9EE8; letter-spacing: 1px; text-transform: uppercase; }
+  .mock-d .repo-sub { font-size: 11px; color: #484f58; margin-bottom: 20px; }
+  .mock-d .section-label { font-size: 10px; font-weight: 700; color: #484f58; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .mock-d .bullet-list { margin-bottom: 20px; }
+  .mock-d .bl-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #161b22; align-items: flex-start; }
+  .mock-d .bl-n { font-size: 11px; font-weight: 800; color: #4D9EE8; min-width: 18px; }
+  .mock-d .bl-t { font-size: 11px; color: #8b949e; line-height: 1.4; }
+  .mock-d .fix-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mock-d .fix-card { background: #161b22; border-left: 2px solid #4D9EE8; border-radius: 0 6px 6px 0; padding: 8px 10px; }
+  .mock-d .fix-t { font-size: 10px; color: #8b949e; line-height: 1.4; }
+
+  .opt-footer { background: #111; padding: 12px 18px; border-top: 1px solid #1a1a1a; }
+  .changes { font-size: 11px; color: #555; }
+  .changes strong { color: #888; }
+</style>
+<script>
+function pick(el) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  try { window.parent?.postMessage({ type:'click', choice: el.dataset.choice, text: el.querySelector('.opt-title').textContent }, '*'); } catch(e){}
+}
+</script>
+</head>
+<body>
+<h1>排版方向对比</h1>
+<p class="sub">点击选择 · 配色 <span style="color:#4D9EE8;font-family:monospace">#4D9EE8</span> on <span style="font-family:monospace;color:#555">#0d1117</span></p>
+
+<div class="layout-grid">
+
+  <!-- A: Current -->
+  <div class="option" data-choice="a" onclick="pick(this)">
+    <div class="opt-header">
+      <div class="opt-letter">A</div>
+      <span class="opt-title">现在的排版（对比用）</span>
+      <span class="opt-vibe">平淡 Dashboard 感</span>
+    </div>
+    <div class="mock mock-a">
+      <div class="mock-topnav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-history">History</span>
+      </div>
+      <div class="mock-tabs">
+        <span class="mock-tab active">Overview</span>
+        <span class="mock-tab">AI Mentor</span>
+        <span class="mock-tab">Action Plan</span>
+        <span class="mock-tab">Rubric</span>
+      </div>
+      <div class="score-hero">
+        <div class="score-num">87</div>
+        <div>
+          <div class="score-repo">lyunify / code-review-agent</div>
+          <div class="score-chips">
+            <span class="chip">24 files</span>
+            <span class="chip">3 languages</span>
+            <span class="chip">2 risks</span>
+          </div>
+        </div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric"><div class="val">87</div><div class="key">Readiness</div></div>
+        <div class="metric"><div class="val">24</div><div class="key">Files</div></div>
+        <div class="metric"><div class="val">3</div><div class="key">Languages</div></div>
+        <div class="metric"><div class="val">2</div><div class="key">Risks</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">AI Mentor Brief</div>
+        <div class="text-block">This repository demonstrates solid foundational knowledge with a clean React + FastAPI setup. The project shows production-readiness signals including CI configuration and deployment setup...</div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Resume Bullets · Interview Prep · Risk Signals</div>
+        <div class="text-block" style="color:#484f58;">tabs with content...</div>
+      </div>
+      <span class="problem-label">↑ 数据重复，面板堆叠，视觉焦点散</span>
+    </div>
+    <div class="opt-footer">
+      <div class="changes">问题：<strong>Metric grid 重复了 chips 的数据 · 6+ 个 panel 堆叠 · 没有一个主视觉焦点</strong></div>
+    </div>
+  </div>
+
+  <!-- B: Big Score Hero -->
+  <div class="option" data-choice="b" onclick="pick(this)">
+    <div class="opt-header">
+      <div class="opt-letter">B</div>
+      <span class="opt-title">大分数 + 双栏内容</span>
+      <span class="opt-vibe">Bold / 强视觉冲击</span>
+    </div>
+    <div class="mock mock-b">
+      <div class="mock-topnav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-history">History</span>
+      </div>
+      <div class="mock-tabs">
+        <span class="mock-tab active">Overview</span>
+        <span class="mock-tab">AI Mentor</span>
+        <span class="mock-tab">Action Plan</span>
+        <span class="mock-tab">Rubric</span>
+      </div>
+      <div class="hero">
+        <div class="big-score">87</div>
+        <div class="status-line">Almost Ready</div>
+        <div class="repo-line">lyunify / code-review-agent · 24 files · MIT</div>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="col-head">Resume Bullets</div>
+          <div class="item"><span class="item-num">01</span><span class="item-text">Built a full-stack code review agent using FastAPI + React with async job polling</span></div>
+          <div class="item"><span class="item-num">02</span><span class="item-text">Deployed to Vercel + Render with CI/CD pipeline via GitHub Actions</span></div>
+          <div class="item"><span class="item-num">03</span><span class="item-text">Implemented LLM-powered mentor feedback with structured rubric scoring</span></div>
+        </div>
+        <div>
+          <div class="col-head">Priority Fixes</div>
+          <div class="item"><span class="item-num">01</span><span class="item-text">Add contribution guidelines (CONTRIBUTING.md)</span></div>
+          <div class="item"><span class="item-num">02</span><span class="item-text">Expand test coverage for backend API endpoints</span></div>
+          <div class="item"><span class="item-num">03</span><span class="item-text">Add Docker setup for local development</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-footer">
+      <div class="changes">改动：<strong>分数放超大居中 · 删掉 metric grid · Overview 只留双栏核心内容 · 其他移进已有 tabs</strong></div>
+    </div>
+  </div>
+
+  <!-- C: Split Hero -->
+  <div class="option" data-choice="c" onclick="pick(this)">
+    <div class="opt-header">
+      <div class="opt-letter">C</div>
+      <span class="opt-title">左分数 + 右内容卡</span>
+      <span class="opt-vibe">平衡 / 信息密度适中</span>
+    </div>
+    <div class="mock mock-c">
+      <div class="mock-topnav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-history">History</span>
+      </div>
+      <div class="mock-tabs">
+        <span class="mock-tab active">Overview</span>
+        <span class="mock-tab">AI Mentor</span>
+        <span class="mock-tab">Action Plan</span>
+        <span class="mock-tab">Rubric</span>
+      </div>
+      <div class="hero-split">
+        <div class="hero-left">
+          <div class="big-num">87</div>
+          <div class="out-of">out of 100</div>
+          <div class="status-pill">Almost Ready</div>
+        </div>
+        <div class="hero-right">
+          <div class="repo-name">lyunify / code-review-agent</div>
+          <div class="repo-sub">24 files · 3 languages · MIT · 2 risks</div>
+          <div class="mentor-quote">"Solid full-stack foundation. Add tests and contribution docs to reach interview-ready."</div>
+          <div class="action-row">
+            <span class="action-chip">+ CONTRIBUTING.md</span>
+            <span class="action-chip">+ Docker setup</span>
+            <span class="action-chip">↑ Test coverage</span>
+          </div>
+        </div>
+      </div>
+      <div class="bullets">
+        <div class="bullet"><span class="bullet-n">01</span><span class="bullet-t">Built full-stack code review agent: FastAPI backend + React frontend with async job polling</span></div>
+        <div class="bullet"><span class="bullet-n">02</span><span class="bullet-t">Deployed via CI/CD to Vercel + Render; configured CORS and environment variables for production</span></div>
+        <div class="bullet"><span class="bullet-n">03</span><span class="bullet-t">Implemented LLM-powered mentor feedback with structured scoring against intern rubric</span></div>
+      </div>
+    </div>
+    <div class="opt-footer">
+      <div class="changes">改动：<strong>Hero 一分为二 · 右侧放关键洞见 + action chips · 下方直接展示 resume bullets</strong></div>
+    </div>
+  </div>
+
+  <!-- D: Linear minimal -->
+  <div class="option" data-choice="d" onclick="pick(this)">
+    <div class="opt-header">
+      <div class="opt-letter">D</div>
+      <span class="opt-title">极简 Linear 风格</span>
+      <span class="opt-vibe">干净 / 呼吸感强</span>
+    </div>
+    <div class="mock mock-d">
+      <div class="mock-topnav">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-history">History</span>
+      </div>
+      <div class="mock-tabs">
+        <span class="mock-tab active">Overview</span>
+        <span class="mock-tab">AI Mentor</span>
+        <span class="mock-tab">Action Plan</span>
+        <span class="mock-tab">Rubric</span>
+      </div>
+      <div class="score-row">
+        <span class="big-n">87</span>
+        <span class="status-badge">Almost Ready</span>
+      </div>
+      <div class="repo-sub">lyunify / code-review-agent</div>
+      <div class="section-label">Resume Bullets</div>
+      <div class="bullet-list">
+        <div class="bl-item"><span class="bl-n">01</span><span class="bl-t">Built full-stack code review agent: FastAPI backend + React frontend with async job polling architecture</span></div>
+        <div class="bl-item"><span class="bl-n">02</span><span class="bl-t">Deployed CI/CD pipeline to Vercel + Render; configured production environment and CORS</span></div>
+        <div class="bl-item"><span class="bl-n">03</span><span class="bl-t">Implemented LLM-powered mentor feedback with rubric scoring against SDE intern criteria</span></div>
+      </div>
+      <div class="section-label">Top Fixes</div>
+      <div class="fix-list">
+        <div class="fix-card"><div class="fix-t">Add CONTRIBUTING.md and Docker setup</div></div>
+        <div class="fix-card"><div class="fix-t">Expand backend test coverage</div></div>
+      </div>
+    </div>
+    <div class="opt-footer">
+      <div class="changes">改动：<strong>去掉所有 panel 边框 · 用留白和 label 区分区域 · 分数大但不居中 · 最少视觉噪音</strong></div>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#333;font-size:12px;text-align:center;margin-top:24px;">点击选择 · 或在终端说</p>
+</body>
+</html>

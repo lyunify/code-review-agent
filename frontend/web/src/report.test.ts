@@ -3,7 +3,7 @@ import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse } from './types'
 
 const result: AnalyzeResponse = {
-  repo_url: 'https://github.com/lyunify/code-review-agent',
+  repo_url: 'https://github.com/lyunify/repo-ready',
   analysis: {
     total_files: 10,
     total_directories: 4,
@@ -13,7 +13,7 @@ const result: AnalyzeResponse = {
   },
   github_metadata: {
     available: true,
-    full_name: 'lyunify/code-review-agent',
+    full_name: 'lyunify/repo-ready',
     description: 'Repository readiness tool',
     topics: ['fastapi', 'react'],
     license_name: 'MIT License',
@@ -91,6 +91,6 @@ describe('generateMarkdownReport', () => {
 
 describe('getReportFileName', () => {
   it('creates a safe markdown file name from the repository URL', () => {
-    expect(getReportFileName(result)).toBe('lyunify-code-review-agent-readiness-report.md')
+    expect(getReportFileName(result)).toBe('lyunify-repo-ready-readiness-report.md')
   })
 })

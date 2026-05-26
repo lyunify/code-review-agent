@@ -2,7 +2,7 @@ import type { AnalyzeResponse } from './types'
 
 export function getDemoAnalysisResult(): AnalyzeResponse {
   return {
-    repo_url: 'https://github.com/lyunify/code-review-agent',
+    repo_url: 'https://github.com/lyunify/repo-ready',
     analysis: {
       total_files: 48,
       total_directories: 16,
@@ -34,7 +34,7 @@ export function getDemoAnalysisResult(): AnalyzeResponse {
     },
     github_metadata: {
       available: true,
-      full_name: 'lyunify/code-review-agent',
+      full_name: 'lyunify/repo-ready',
       description: 'AI-assisted repository readiness platform for SDE internship project review.',
       topics: ['fastapi', 'react', 'typescript', 'openai', 'sqlite'],
       license_name: 'MIT License',

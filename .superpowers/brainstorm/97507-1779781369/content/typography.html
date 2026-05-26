@@ -1,0 +1,50 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+<h2>字体风格对比</h2>
+<p class="subtitle">同样的内容，两种排版感觉——哪个更像你想要的产品？</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="sans-serif" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0f1512; padding: 28px; border-radius: 8px; min-height: 220px; display: flex; flex-direction: column; gap: 10px; font-family: -apple-system, 'Helvetica Neue', sans-serif;">
+      <div style="font-size: 28px; font-weight: 600; color: #e8f0ee; letter-spacing: -0.5px;">repo-ready.</div>
+      <div style="font-size: 10px; color: #81D8D0; letter-spacing: 3px; text-transform: uppercase;">SDE INTERN · READINESS</div>
+      <div style="font-size: 13px; color: #8aa8a0; margin-top: 4px; line-height: 1.5;">Analyze any GitHub repository and get an instant readiness score for SDE intern interviews.</div>
+      <div style="background: #81D8D0; color: #0f1512; font-size: 13px; padding: 9px 20px; border-radius: 20px; display: inline-block; margin-top: 6px; font-weight: 600; width: fit-content; letter-spacing: 0.3px;">Analyze Repository →</div>
+      <div style="display: flex; gap: 10px; margin-top: 8px; align-items: center;">
+        <div style="font-size: 36px; font-weight: 700; color: #81D8D0; line-height: 1;">92</div>
+        <div>
+          <div style="font-size: 12px; color: #e8f0ee; font-weight: 500;">Readiness Score</div>
+          <div style="font-size: 11px; color: #4a6b62;">Production Ready</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 全 sans-serif（现代工具感）</h3>
+      <p>Inter / system-ui 全程贯穿。干净、精准，像 Linear 或 Vercel 的产品风格。工程师工具感强，改动最小。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="serif-headers" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0f1512; padding: 28px; border-radius: 8px; min-height: 220px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-family: 'Playfair Display', Georgia, serif; font-size: 30px; font-weight: 400; color: #e8f0ee; letter-spacing: -0.3px; font-style: italic;">repo-ready.</div>
+      <div style="font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 10px; color: #81D8D0; letter-spacing: 3px; text-transform: uppercase;">SDE INTERN · READINESS</div>
+      <div style="font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 13px; color: #8aa8a0; margin-top: 4px; line-height: 1.5;">Analyze any GitHub repository and get an instant readiness score for SDE intern interviews.</div>
+      <div style="background: #81D8D0; color: #0f1512; font-size: 13px; padding: 9px 20px; border-radius: 20px; display: inline-block; margin-top: 6px; font-weight: 600; width: fit-content; font-family: -apple-system, 'Helvetica Neue', sans-serif;">Analyze Repository →</div>
+      <div style="display: flex; gap: 10px; margin-top: 8px; align-items: center;">
+        <div style="font-family: 'Playfair Display', Georgia, serif; font-size: 38px; font-weight: 600; color: #81D8D0; line-height: 1;">92</div>
+        <div>
+          <div style="font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 12px; color: #e8f0ee; font-weight: 500;">Readiness Score</div>
+          <div style="font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 11px; color: #4a6b62;">Production Ready</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Serif 大字 + sans-serif 正文（cutti 风）</h3>
+      <p>Playfair Display 用于 logo、大数字、标题，正文用 sans-serif。有编辑感和品牌温度，最接近 cutti.app 的气质。需引入一个 Google Font。</p>
+    </div>
+  </div>
+
+</div>

@@ -14,7 +14,7 @@ import { getDemoAnalysisResult } from './demoData'
 import type { AnalyzeResponse, HistoryRecord } from './types'
 import type { Tab, View } from './uiTypes'
 
-const SAMPLE_REPO_URL = 'https://github.com/lyunify/code-review-agent'
+const SAMPLE_REPO_URL = 'https://github.com/lyunify/repo-ready'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Overview',

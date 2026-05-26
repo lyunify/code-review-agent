@@ -3,14 +3,14 @@ import { analyzeRepository, fetchHistoryRecord, getFriendlyErrorMessage, normali
 
 describe('normalizeRepoUrl', () => {
   it('adds https scheme when missing', () => {
-    expect(normalizeRepoUrl('github.com/lyunify/code-review-agent')).toBe(
-      'https://github.com/lyunify/code-review-agent',
+    expect(normalizeRepoUrl('github.com/lyunify/repo-ready')).toBe(
+      'https://github.com/lyunify/repo-ready',
     )
   })
 
   it('preserves existing https scheme', () => {
-    expect(normalizeRepoUrl('https://github.com/lyunify/code-review-agent')).toBe(
-      'https://github.com/lyunify/code-review-agent',
+    expect(normalizeRepoUrl('https://github.com/lyunify/repo-ready')).toBe(
+      'https://github.com/lyunify/repo-ready',
     )
   })
 })

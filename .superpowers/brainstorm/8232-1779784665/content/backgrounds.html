@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Background Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    background: #111;
+    color: #fff;
+    padding: 28px 24px 80px;
+  }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #555; font-size: 13px; margin-bottom: 32px; }
+
+  .cols { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  .col {
+    flex: 1; min-width: 170px;
+    cursor: pointer;
+    border-radius: 14px;
+    border: 2px solid #2a2a2a;
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .col:hover { transform: translateY(-2px); border-color: #444; }
+  .col.selected { border-color: #fff; }
+  .col.selected::after {
+    content: '✓';
+    position: absolute; top: 10px; right: 10px;
+    background: #fff; color: #000;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+
+  .accent { color: #4D9EE8; }
+
+  .mock {
+    padding: 16px;
+  }
+  .mock-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 12px; margin-bottom: 14px;
+  }
+  .mock-logo { font-weight: 800; font-size: 13px; color: #e8eef4; }
+  .mock-nav-btn {
+    font-size: 10px; font-weight: 600;
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid rgba(77,158,232,0.3);
+    color: #4D9EE8;
+  }
+  .mock-score-block { margin-bottom: 12px; }
+  .mock-score { font-size: 40px; font-weight: 900; letter-spacing: -2px; line-height: 1; color: #4D9EE8; }
+  .mock-repo { font-size: 10px; margin-top: 3px; }
+  .mock-pill {
+    font-size: 9px; font-weight: 700;
+    padding: 3px 9px; border-radius: 20px; display: inline-block; margin-top: 6px;
+    background: rgba(77,158,232,0.15); color: #4D9EE8;
+  }
+  .mock-input {
+    border-radius: 7px; padding: 7px 10px;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .mock-btn {
+    font-size: 9px; font-weight: 700;
+    padding: 4px 10px; border-radius: 6px;
+    background: #4D9EE8; color: #fff;
+  }
+  .mock-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .mock-card { border-radius: 6px; padding: 8px; }
+  .mock-card .v { font-size: 14px; font-weight: 800; color: #e8eef4; }
+  .mock-card .k { font-size: 9px; margin-top: 1px; }
+
+  .meta { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .hex { font-size: 12px; font-weight: 700; font-family: monospace; color: #fff; }
+  .vibe { font-size: 11px; color: #555; margin-top: 2px; }
+</style>
+<script>
+function pick(el) {
+  document.querySelectorAll('.col').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  try {
+    window.parent?.postMessage({ type: 'click', choice: el.dataset.choice, text: el.dataset.hex }, '*');
+  } catch(e) {}
+}
+</script>
+</head>
+<body>
+<h1>背景色选哪个？</h1>
+<p class="sub">全部搭配你选的蓝色 <span style="color:#4D9EE8;font-family:monospace;">#4D9EE8</span>，墨绿色的那个是现在用的</p>
+
+<div class="cols">
+
+  <!-- A: 现在的墨绿 (current, for reference) -->
+  <div class="col" data-choice="a" data-hex="#0f1512" onclick="pick(this)">
+    <div class="mock" style="background:#0f1512;">
+      <div class="mock-nav" style="border-bottom:1px solid #1e2e28;">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn">History</span>
+      </div>
+      <div class="mock-score-block">
+        <div class="mock-score">87</div>
+        <div class="mock-repo" style="color:#8aa8a0;">lyunify / code-review-agent</div>
+        <span class="mock-pill">Almost Ready</span>
+      </div>
+      <div class="mock-input" style="background:#1a2a24;color:#4a6b62;">
+        github.com/username/project
+        <span class="mock-btn">Go</span>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card" style="background:#131a17;"><div class="v">24</div><div class="k" style="color:#4a6b62;">Files</div></div>
+        <div class="mock-card" style="background:#131a17;"><div class="v">MIT</div><div class="k" style="color:#4a6b62;">License</div></div>
+      </div>
+    </div>
+    <div class="meta" style="background:#0a0f0d;">
+      <div class="hex">#0f1512 <span style="color:#4a6b62;font-size:10px;font-weight:400;">← 现在用的</span></div>
+      <div class="vibe">深墨绿 — 偏土，不推荐继续用</div>
+    </div>
+  </div>
+
+  <!-- B: 纯净深灰 (GitHub dark / neutral) -->
+  <div class="col" data-choice="b" data-hex="#0d1117" onclick="pick(this)">
+    <div class="mock" style="background:#0d1117;">
+      <div class="mock-nav" style="border-bottom:1px solid #21262d;">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn">History</span>
+      </div>
+      <div class="mock-score-block">
+        <div class="mock-score">87</div>
+        <div class="mock-repo" style="color:#8b949e;">lyunify / code-review-agent</div>
+        <span class="mock-pill">Almost Ready</span>
+      </div>
+      <div class="mock-input" style="background:#161b22;color:#484f58;">
+        github.com/username/project
+        <span class="mock-btn">Go</span>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card" style="background:#161b22;"><div class="v">24</div><div class="k" style="color:#484f58;">Files</div></div>
+        <div class="mock-card" style="background:#161b22;"><div class="v">MIT</div><div class="k" style="color:#484f58;">License</div></div>
+      </div>
+    </div>
+    <div class="meta" style="background:#090d13;">
+      <div class="hex">#0d1117</div>
+      <div class="vibe">GitHub Dark — cool-tinted, clean, familiar</div>
+    </div>
+  </div>
+
+  <!-- C: 中性近黑 (Linear / Vercel style) -->
+  <div class="col" data-choice="c" data-hex="#111116" onclick="pick(this)">
+    <div class="mock" style="background:#111116;">
+      <div class="mock-nav" style="border-bottom:1px solid #1e1e26;">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn">History</span>
+      </div>
+      <div class="mock-score-block">
+        <div class="mock-score">87</div>
+        <div class="mock-repo" style="color:#888899;">lyunify / code-review-agent</div>
+        <span class="mock-pill">Almost Ready</span>
+      </div>
+      <div class="mock-input" style="background:#1a1a22;color:#444456;">
+        github.com/username/project
+        <span class="mock-btn">Go</span>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card" style="background:#1a1a22;"><div class="v">24</div><div class="k" style="color:#444456;">Files</div></div>
+        <div class="mock-card" style="background:#1a1a22;"><div class="v">MIT</div><div class="k" style="color:#444456;">License</div></div>
+      </div>
+    </div>
+    <div class="meta" style="background:#0c0c10;">
+      <div class="hex">#111116</div>
+      <div class="vibe">近黑带微蓝 — Linear 风格，现代感强</div>
+    </div>
+  </div>
+
+  <!-- D: 纯净暖黑 (Figma / Raycast) -->
+  <div class="col" data-choice="d" data-hex="#141414" onclick="pick(this)">
+    <div class="mock" style="background:#141414;">
+      <div class="mock-nav" style="border-bottom:1px solid #222222;">
+        <span class="mock-logo">repo-ready.</span>
+        <span class="mock-nav-btn">History</span>
+      </div>
+      <div class="mock-score-block">
+        <div class="mock-score">87</div>
+        <div class="mock-repo" style="color:#888888;">lyunify / code-review-agent</div>
+        <span class="mock-pill">Almost Ready</span>
+      </div>
+      <div class="mock-input" style="background:#1e1e1e;color:#444444;">
+        github.com/username/project
+        <span class="mock-btn">Go</span>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card" style="background:#1e1e1e;"><div class="v">24</div><div class="k" style="color:#444444;">Files</div></div>
+        <div class="mock-card" style="background:#1e1e1e;"><div class="v">MIT</div><div class="k" style="color:#444444;">License</div></div>
+      </div>
+    </div>
+    <div class="meta" style="background:#0f0f0f;">
+      <div class="hex">#141414</div>
+      <div class="vibe">纯净暖黑 — Figma 风格，无色偏，干净</div>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#333;font-size:12px;margin-top:24px;text-align:center;">点击选择 · 或者在终端告诉我</p>
+</body>
+</html>

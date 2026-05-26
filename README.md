@@ -1,6 +1,6 @@
 # repo-ready
 
-[![CI](https://github.com/lyunify/code-review-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/lyunify/code-review-agent/actions/workflows/ci.yml)
+[![CI](https://github.com/lyunify/repo-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/lyunify/repo-ready/actions/workflows/ci.yml)
 
 **Live demo: [www.repo-ready.com](https://www.repo-ready.com)**
 

@@ -10,7 +10,7 @@ export function TopNav({ onHistoryOpen }: { onHistoryOpen: () => void }) {
       <div className="top-nav-right">
         <a
           className="top-nav-link"
-          href="https://github.com/lyunify/code-review-agent"
+          href="https://github.com/lyunify/repo-ready"
           target="_blank"
           rel="noreferrer"
           aria-label="View source on GitHub"
