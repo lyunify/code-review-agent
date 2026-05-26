@@ -16,6 +16,14 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
+```
+
+Add your OpenAI API key to `backend/.env`:
+
+```bash
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-5.4-mini
 ```
 
 ## Run Tests
@@ -57,6 +65,7 @@ cd frontend
 - Check README quality signals such as purpose, setup, usage, tech stack, and demo assets.
 - Consider dependency files, docs, project structure, long files, and risk density.
 - Generate mock mentor feedback with resume bullets, interview questions, and next steps.
+- Use OpenAI-backed mentor feedback when `OPENAI_API_KEY` is configured, with rule-based fallback.
 
 ## API Endpoints
 
