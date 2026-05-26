@@ -1,5 +1,8 @@
+import logging
 from collections import Counter
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import (
     LANGUAGE_BY_EXTENSION,
@@ -16,6 +19,7 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     if not root.exists() or not root.is_dir():
         raise ValueError(f"Repository path does not exist or is not a directory: {root}")
 
+    logger.info("Starting file analysis: path=%s", repo_path)
     files: list[FileMetric] = []
     languages: Counter[str] = Counter()
     directory_paths: set[Path] = set()
@@ -99,6 +103,7 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
     has_frontend_backend_structure = {"frontend", "backend"}.issubset(top_level_directories)
 
+    logger.info("Analysis complete: files=%d languages=%s risks=%d", len(files), list(languages.keys()), len(risks))
     return RepositoryAnalysis(
         total_files=len(files),
         total_directories=len(directory_paths),

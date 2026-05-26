@@ -1,4 +1,8 @@
+import logging
+
 from app.models.schemas import ReadinessChecklistItem, RepositoryAnalysis, ResumeReadiness
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_readiness(analysis: RepositoryAnalysis) -> ResumeReadiness:
@@ -137,6 +141,7 @@ def calculate_readiness(analysis: RepositoryAnalysis) -> ResumeReadiness:
     if not priority_fixes:
         priority_fixes = ["Project looks ready for a resume review pass."]
 
+    logger.info("Readiness score: %d/100 status=%s", score, _status_for_score(score))
     return ResumeReadiness(
         score=score,
         status=_status_for_score(score),

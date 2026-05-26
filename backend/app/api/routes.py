@@ -1,4 +1,8 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
+
+logger = logging.getLogger(__name__)
 
 from app.db.database import AnalysisHistoryStore
 from app.models.schemas import (
@@ -21,9 +25,10 @@ history_store = AnalysisHistoryStore()
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 def analyze_repo(request: AnalyzeRequest) -> AnalyzeResponse:
+    repo_url = str(request.repo_url).rstrip("/")
+    logger.info("Analysis requested: repo=%s", repo_url)
     try:
         repo_path = clone_repository(str(request.repo_url))
-        repo_url = str(request.repo_url).rstrip("/")
         analysis = analyze_repository(repo_path)
         github_metadata = fetch_github_metadata(repo_url)
         report = generate_report(analysis)
@@ -39,7 +44,9 @@ def analyze_repo(request: AnalyzeRequest) -> AnalyzeResponse:
             action_plan=action_plan,
             github_metadata=github_metadata,
         )
+        logger.info("Analysis complete: repo=%s score=%d", repo_url, readiness.score)
     except Exception as exc:
+        logger.error("Analysis failed: repo=%s error=%s", repo_url, exc)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return AnalyzeResponse(

@@ -1,4 +1,8 @@
+import logging
+
 from app.models.schemas import ActionPlan, ActionPlanItem, RepositoryAnalysis, ResumeReadiness
+
+logger = logging.getLogger(__name__)
 
 ACTION_PLAN_GUIDANCE = {
     "Automated tests exist": ActionPlanItem(
@@ -185,4 +189,5 @@ def generate_action_plan(analysis: RepositoryAnalysis, readiness: ResumeReadines
             )
         ]
 
+    logger.info("Action plan generated: %d items", len(items))
     return ActionPlan(items=items[:5])

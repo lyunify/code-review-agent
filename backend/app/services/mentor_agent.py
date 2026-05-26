@@ -1,9 +1,12 @@
+import logging
 import os
 from typing import Any
 
 from dotenv import load_dotenv
 
 from app.models.schemas import MentorFeedback, RepositoryAnalysis, ResumeReadiness
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_OPENAI_MODEL = "gpt-5.4-mini"
 
@@ -15,18 +18,23 @@ def generate_mentor_feedback(
     openai_client: Any | None = None,
     use_openai: bool | None = None,
 ) -> MentorFeedback:
+    logger.info("Generating mentor feedback: repo=%s", repo_url)
     should_use_openai = _should_use_openai(use_openai=use_openai, openai_client=openai_client)
     if should_use_openai:
         try:
-            return _generate_openai_feedback(
+            result = _generate_openai_feedback(
                 repo_url=repo_url,
                 analysis=analysis,
                 readiness=readiness,
                 openai_client=openai_client,
             )
-        except Exception:
+            logger.info("Mentor feedback generated via OpenAI")
+            return result
+        except Exception as exc:
+            logger.warning("OpenAI unavailable, falling back to rule-based: %s", exc)
             return _generate_rule_based_feedback(repo_url=repo_url, analysis=analysis, readiness=readiness)
 
+    logger.info("Mentor feedback generated via rule-based fallback")
     return _generate_rule_based_feedback(repo_url=repo_url, analysis=analysis, readiness=readiness)
 
 

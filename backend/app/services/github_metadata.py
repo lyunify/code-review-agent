@@ -1,8 +1,11 @@
+import logging
 from urllib.parse import urlparse
 
 import requests
 
 from app.models.schemas import GitHubMetadata
+
+logger = logging.getLogger(__name__)
 
 
 def parse_github_repo(repo_url: str) -> tuple[str, str]:
@@ -22,6 +25,7 @@ def parse_github_repo(repo_url: str) -> tuple[str, str]:
 def fetch_github_metadata(repo_url: str) -> GitHubMetadata:
     owner, repo = parse_github_repo(repo_url)
     full_name = f"{owner}/{repo}"
+    logger.info("Fetching GitHub metadata: repo=%s", full_name)
 
     try:
         response = requests.get(
@@ -34,12 +38,14 @@ def fetch_github_metadata(repo_url: str) -> GitHubMetadata:
         )
         response.raise_for_status()
         payload = response.json()
-    except Exception:
+    except Exception as exc:
+        logger.warning("GitHub metadata unavailable: repo=%s error=%s", full_name, exc)
         return GitHubMetadata(available=False, full_name=full_name)
 
     license_payload = payload.get("license") or {}
     homepage = payload.get("homepage") or None
 
+    logger.info("GitHub metadata fetched: repo=%s stars=%d forks=%d", full_name, payload.get("stargazers_count", 0), payload.get("forks_count", 0))
     return GitHubMetadata(
         available=True,
         full_name=payload.get("full_name") or full_name,
