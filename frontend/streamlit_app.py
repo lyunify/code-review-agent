@@ -124,6 +124,30 @@ def render_recent_history() -> None:
         st.caption("No analyses saved yet.")
 
 
+def normalize_repo_url(repo_url: str) -> str:
+    cleaned = repo_url.strip()
+    if cleaned and not cleaned.startswith(("http://", "https://")):
+        return f"https://{cleaned}"
+    return cleaned
+
+
+def error_message_from_response(response: requests.Response) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        return response.text or "Unexpected API error."
+
+    detail = payload.get("detail")
+    if isinstance(detail, list) and detail:
+        first_error = detail[0]
+        message = first_error.get("msg", "Request validation failed.")
+        field = " -> ".join(str(part) for part in first_error.get("loc", []))
+        return f"{message} ({field})"
+    if isinstance(detail, str):
+        return detail
+    return "Unexpected API error."
+
+
 def render_results(payload: dict) -> None:
     analysis = payload["analysis"]
     report = payload["report"]
@@ -236,10 +260,13 @@ with button_col:
     analyze_clicked = st.button("Analyze", type="primary", disabled=not repo_url, use_container_width=True)
 
 if analyze_clicked:
+    normalized_repo_url = normalize_repo_url(repo_url)
     with st.spinner("Cloning repository, scanning project signals, and generating mentor feedback..."):
         try:
-            response = requests.post(API_URL, json={"repo_url": repo_url}, timeout=90)
-            response.raise_for_status()
+            response = requests.post(API_URL, json={"repo_url": normalized_repo_url}, timeout=90)
+            if response.status_code >= 400:
+                st.error(f"Analysis failed: {error_message_from_response(response)}")
+                st.stop()
             render_results(response.json())
         except requests.RequestException as exc:
             st.error(f"Analysis failed: {exc}")
