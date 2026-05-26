@@ -5,15 +5,25 @@ import { ActionPlanView } from './components/ActionPlanView'
 import { CommandBar } from './components/CommandBar'
 import { Dashboard } from './components/Dashboard'
 import { EmptyWorkbench } from './components/EmptyWorkbench'
+import { HistoryDrawer } from './components/HistoryDrawer'
 import { LoadingWorkbench } from './components/LoadingWorkbench'
 import { MentorView } from './components/MentorView'
 import { RubricView } from './components/RubricView'
-import { Sidebar } from './components/Sidebar'
+import { TopNav } from './components/TopNav'
 import { getDemoAnalysisResult } from './demoData'
 import type { AnalyzeResponse, HistoryRecord } from './types'
 import type { Tab, View } from './uiTypes'
 
 const SAMPLE_REPO_URL = 'https://github.com/lyunify/code-review-agent'
+
+const VIEW_LABELS: Record<View, string> = {
+  dashboard: 'Overview',
+  mentor: 'AI Mentor',
+  action: 'Action Plan',
+  rubric: 'Rubric',
+}
+
+const VIEWS: View[] = ['dashboard', 'mentor', 'action', 'rubric']
 
 function App() {
   const [repoUrl, setRepoUrl] = useState(SAMPLE_REPO_URL)
@@ -24,6 +34,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
     fetchHistory()
@@ -76,14 +87,17 @@ function App() {
 
   return (
     <main className="workspace">
-      <Sidebar
+      <TopNav onHistoryOpen={() => setIsDrawerOpen(true)} />
+
+      <HistoryDrawer
+        isOpen={isDrawerOpen}
         history={history}
-        activeView={activeView}
         loadingHistoryId={loadingHistoryId}
-        onViewChange={setActiveView}
+        onClose={() => setIsDrawerOpen(false)}
         onSelectHistory={handleSelectHistory}
       />
-      <section className="workbench">
+
+      <div className="main-content">
         <CommandBar
           repoUrl={repoUrl}
           isLoading={isLoading}
@@ -104,19 +118,33 @@ function App() {
         {isLoading ? (
           <LoadingWorkbench repoUrl={repoUrl} />
         ) : result ? (
-          activeView === 'dashboard' ? (
-            <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
-          ) : activeView === 'action' ? (
-            <ActionPlanView result={result} />
-          ) : activeView === 'rubric' ? (
-            <RubricView result={result} />
-          ) : (
-            <MentorView result={result} />
-          )
+          <>
+            <nav className="view-tabs">
+              {VIEWS.map((view) => (
+                <button
+                  key={view}
+                  className={`view-tab${activeView === view ? ' active' : ''}`}
+                  onClick={() => setActiveView(view)}
+                >
+                  {VIEW_LABELS[view]}
+                </button>
+              ))}
+            </nav>
+
+            {activeView === 'dashboard' ? (
+              <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
+            ) : activeView === 'action' ? (
+              <ActionPlanView result={result} />
+            ) : activeView === 'rubric' ? (
+              <RubricView result={result} />
+            ) : (
+              <MentorView result={result} />
+            )}
+          </>
         ) : (
           <EmptyWorkbench history={history} activeView={activeView} onTrySampleRepo={handleTrySampleRepo} />
         )}
-      </section>
+      </div>
     </main>
   )
 }
