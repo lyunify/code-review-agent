@@ -88,6 +88,18 @@ h1, h2, h3, h4 { margin: 0; }
   color: var(--accent);
 }
 
+.top-nav-btn:focus-visible,
+.view-tab:focus-visible,
+.content-tab:focus-visible,
+.score-download:focus-visible,
+.download-button:focus-visible,
+.empty-actions button:focus-visible,
+.drawer-history-row:focus-visible,
+.drawer-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ── History drawer ─────────────────────────────────────────── */
 .drawer-backdrop {
   position: fixed;
@@ -931,3 +943,12 @@ h1, h2, h3, h4 { margin: 0; }
 /* ── Spin animation ─────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .main-content { padding: 24px 16px 60px; }
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .metadata-grid { grid-template-columns: repeat(2, 1fr); }
+  .score-hero { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .score-number { font-size: 40px; }
+}
