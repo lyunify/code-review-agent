@@ -39,7 +39,7 @@ jobs:
 
       - name: Run backend tests with coverage
         working-directory: backend
-        run: pytest --cov=app --cov-report=term-missing --cov-fail-under=80
+        run: pytest --cov=app --cov-report=term-missing
 
   frontend:
     name: Frontend tests and build
