@@ -53,3 +53,15 @@ def is_ignored_path(path: Path) -> bool:
 
 
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./analysis_history.db")
+
+
+def _parse_origins(raw: str) -> list[str]:
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
+ALLOWED_ORIGINS: list[str] = _parse_origins(
+    os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    )
+)
