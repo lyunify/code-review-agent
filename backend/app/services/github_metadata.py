@@ -22,6 +22,25 @@ def parse_github_repo(repo_url: str) -> tuple[str, str]:
     return owner, repo
 
 
+def get_repo_size_kb(repo_url: str) -> int:
+    """Return the repository size in KB from the GitHub API, or 0 if unavailable."""
+    try:
+        owner, repo = parse_github_repo(repo_url)
+        response = requests.get(
+            f"https://api.github.com/repos/{owner}/{repo}",
+            headers={
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+            timeout=8,
+        )
+        response.raise_for_status()
+        return int(response.json().get("size", 0))
+    except Exception as exc:
+        logger.warning("Could not retrieve repo size for %s: %s", repo_url, exc)
+        return 0
+
+
 def fetch_github_metadata(repo_url: str) -> GitHubMetadata:
     owner, repo = parse_github_repo(repo_url)
     full_name = f"{owner}/{repo}"

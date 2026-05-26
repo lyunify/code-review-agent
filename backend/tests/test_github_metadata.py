@@ -1,4 +1,4 @@
-from app.services.github_metadata import fetch_github_metadata, parse_github_repo
+from app.services.github_metadata import fetch_github_metadata, get_repo_size_kb, parse_github_repo
 
 
 def test_parse_github_repo_accepts_common_github_urls() -> None:
@@ -65,3 +65,37 @@ def test_fetch_github_metadata_falls_back_when_api_fails(monkeypatch) -> None:
     assert metadata.available is False
     assert metadata.full_name == "lyunify/code-review-agent"
     assert metadata.description is None
+
+
+def test_get_repo_size_kb_returns_size_from_api(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:  # type: ignore[type-arg]
+            return {"size": 42000}
+
+    monkeypatch.setattr(
+        "app.services.github_metadata.requests.get",
+        lambda url, headers, timeout: FakeResponse(),
+    )
+
+    size = get_repo_size_kb("https://github.com/example/demo")
+    assert size == 42000
+
+
+def test_get_repo_size_kb_returns_zero_on_api_failure(monkeypatch) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("network error")
+
+    monkeypatch.setattr("app.services.github_metadata.requests.get", fail)
+
+    size = get_repo_size_kb("https://github.com/example/demo")
+    assert size == 0
+
+
+def test_get_repo_size_kb_returns_zero_for_non_github_url() -> None:
+    # parse_github_repo raises ValueError for non-GitHub URLs;
+    # get_repo_size_kb should silently return 0.
+    size = get_repo_size_kb("https://gitlab.com/foo/bar")
+    assert size == 0
