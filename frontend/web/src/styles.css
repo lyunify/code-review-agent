@@ -1,16 +1,16 @@
 /* ── Design tokens ─────────────────────────────────────────── */
 :root {
-  --bg: #0f1512;
-  --bg-nav: #0a0f0d;
-  --bg-card: #131a17;
-  --bg-input: #1a2a24;
-  --border: #1e2e28;
-  --accent: #81D8D0;
-  --accent-text: #0f1512;
-  --text-primary: #e8f0ee;
-  --text-secondary: #8aa8a0;
-  --text-muted: #4a6b62;
-  --status-ready: #81D8D0;
+  --bg: #0d1117;
+  --bg-nav: #090d13;
+  --bg-card: #161b22;
+  --bg-input: #1c2128;
+  --border: #21262d;
+  --accent: #4D9EE8;
+  --accent-text: #ffffff;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --status-ready: #4D9EE8;
   --status-mid: #f59e0b;
   --status-low: #f87171;
   --font-display: 'Playfair Display', Georgia, serif;
