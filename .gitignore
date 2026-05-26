@@ -18,3 +18,11 @@ frontend/web/dist/
 
 # Internal planning docs (not for public)
 docs/superpowers/
+
+# Visual brainstorm sessions
+.superpowers/
+
+# Test coverage reports
+coverage/
+frontend/web/coverage/
+backend/.coverage
