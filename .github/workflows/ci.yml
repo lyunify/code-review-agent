@@ -62,7 +62,7 @@ jobs:
 
       - name: Lint frontend (ESLint)
         working-directory: frontend/web
-        run: npm run lint
+        run: npm run lint -- --max-warnings 0
 
       - name: Run frontend tests
         working-directory: frontend/web
