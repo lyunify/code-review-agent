@@ -8,4 +8,5 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+# E501 (line-too-long) is handled by ruff format, not the linter
 ignore = ["E501"]
