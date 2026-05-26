@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import type { HistoryRecord } from '../types'
 
@@ -14,15 +15,24 @@ export function HistoryDrawer({
   onClose: () => void
   onSelectHistory: (record: HistoryRecord) => void
 }) {
+  useEffect(() => {
+    if (!isOpen) return
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
     <>
-      <div className="drawer-backdrop" onClick={onClose} />
-      <aside className="history-drawer">
+      <div className="drawer-backdrop" onClick={onClose} aria-hidden="true" />
+      <aside className="history-drawer" aria-label="Recent scans">
         <div className="drawer-header">
           <h2>Recent scans</h2>
-          <button className="drawer-close" onClick={onClose}>
+          <button className="drawer-close" onClick={onClose} aria-label="Close history">
             <X size={14} />
           </button>
         </div>
@@ -38,7 +48,7 @@ export function HistoryDrawer({
                   onSelectHistory(item)
                   onClose()
                 }}
-                disabled={loadingHistoryId !== null}
+                disabled={loadingHistoryId === item.id}
               >
                 <span>{item.repo_url.replace('https://github.com/', '')}</span>
                 <small>
