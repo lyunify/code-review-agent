@@ -49,6 +49,8 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     assert "summary" in payload["report"]
     assert payload["readiness"]["score"] >= 90
     assert payload["readiness"]["status"] == "Resume-ready"
+    assert "mentor_summary" in payload["mentor_feedback"]
+    assert len(payload["mentor_feedback"]["resume_bullets"]) == 3
 
 
 def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) -> None:

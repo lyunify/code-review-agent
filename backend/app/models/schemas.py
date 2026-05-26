@@ -57,11 +57,19 @@ class ReviewReport(BaseModel):
     recommendations: list[str]
 
 
+class MentorFeedback(BaseModel):
+    mentor_summary: str
+    resume_bullets: list[str]
+    interview_questions: list[str]
+    next_steps: list[str]
+
+
 class AnalyzeResponse(BaseModel):
     repo_url: str
     analysis: RepositoryAnalysis
     report: ReviewReport
     readiness: ResumeReadiness
+    mentor_feedback: MentorFeedback
 
 
 class AnalysisHistoryRecord(BaseModel):

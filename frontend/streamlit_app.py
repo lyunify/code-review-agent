@@ -28,6 +28,7 @@ if analyze_clicked:
             analysis = payload["analysis"]
             report = payload["report"]
             readiness = payload["readiness"]
+            mentor_feedback = payload["mentor_feedback"]
 
             st.subheader("Resume Readiness")
             st.caption("Score is based on documentation, tests, setup, structure, dependencies, and risk signals.")
@@ -50,6 +51,26 @@ if analyze_clicked:
             st.subheader("Top Fixes Before Adding This Project To Your Resume")
             for fix in readiness["priority_fixes"]:
                 st.write(f"- {fix}")
+
+            st.subheader("AI Mentor Feedback")
+            st.caption("Rule-based mock agent output. The next version can replace this with OpenAI-generated feedback.")
+            st.write(mentor_feedback["mentor_summary"])
+
+            mentor_cols = st.columns(2)
+
+            with mentor_cols[0]:
+                st.markdown("**Resume Bullet Suggestions**")
+                for bullet in mentor_feedback["resume_bullets"]:
+                    st.write(f"- {bullet}")
+
+                st.markdown("**Next Steps**")
+                for step in mentor_feedback["next_steps"]:
+                    st.write(f"- {step}")
+
+            with mentor_cols[1]:
+                st.markdown("**Interview Prep Questions**")
+                for question in mentor_feedback["interview_questions"]:
+                    st.write(f"- {question}")
 
             left, right = st.columns(2)
 
