@@ -2,8 +2,6 @@ import logging
 from collections import Counter
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
-
 from app.core.config import (
     LANGUAGE_BY_EXTENSION,
     LONG_FILE_LINE_THRESHOLD,
@@ -12,6 +10,8 @@ from app.core.config import (
     is_ignored_path,
 )
 from app.models.schemas import FileMetric, RepositoryAnalysis, RiskSignal
+
+logger = logging.getLogger(__name__)
 
 
 def analyze_repository(repo_path: Path) -> RepositoryAnalysis:

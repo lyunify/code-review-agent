@@ -2,8 +2,6 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-logger = logging.getLogger(__name__)
-
 from app.db.database import AnalysisHistoryStore
 from app.models.schemas import (
     AnalysisHistoryDetail,
@@ -19,6 +17,7 @@ from app.services.readiness import calculate_readiness
 from app.services.repo_loader import clone_repository
 from app.services.report_generator import generate_report
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["analysis"])
 history_store = AnalysisHistoryStore()
 

@@ -10,8 +10,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 
-logger = logging.getLogger(__name__)
-
 app = FastAPI(
     title="Code Review Agent",
     description="Analyze GitHub repositories and generate static review reports.",
