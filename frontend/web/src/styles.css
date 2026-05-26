@@ -527,10 +527,18 @@ h1, h2, h3, h4 { margin: 0; }
   font-style: italic;
 }
 
+.split-hero-bottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .split-hero-fixes {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .split-hero-fix {

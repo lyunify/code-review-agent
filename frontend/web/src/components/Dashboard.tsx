@@ -53,16 +53,18 @@ export function Dashboard({
             {result.readiness.score}/100 · {result.analysis.total_files.toLocaleString()} files · {languageKeys.length} languages · {result.analysis.risks.length} risks
           </p>
           <p className="split-hero-quote">{mentorSnippet}</p>
-          <div className="split-hero-fixes">
-            {result.readiness.priority_fixes.slice(0, 3).map((fix) => (
-              <span key={fix} className="split-hero-fix">+ {fix}</span>
-            ))}
+          <div className="split-hero-bottom">
+            <div className="split-hero-fixes">
+              {result.readiness.priority_fixes.slice(0, 3).map((fix) => (
+                <span key={fix} className="split-hero-fix">+ {fix}</span>
+              ))}
+            </div>
+            <button className="score-download" onClick={handleDownloadReport}>
+              <Download size={14} />
+              Report
+            </button>
           </div>
         </div>
-        <button className="score-download" onClick={handleDownloadReport} style={{ margin: '20px 20px 20px 0', alignSelf: 'flex-start' }}>
-          <Download size={14} />
-          Report
-        </button>
       </div>
 
       {/* Resume / Interview / Risks tabs */}
