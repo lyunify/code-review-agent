@@ -1,5 +1,15 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle2, ClipboardList, Code2, FileQuestion, Gauge, Layers3, MessageSquareText } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  Code2,
+  Download,
+  FileQuestion,
+  Gauge,
+  Layers3,
+  MessageSquareText,
+} from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
 import type { AnalyzeResponse } from '../types'
 import type { Tab } from '../uiTypes'
@@ -14,7 +24,9 @@ export function Dashboard({
   activeTab: Tab
   onTabChange: (tab: Tab) => void
 }) {
-  const statusClass = result.readiness.score >= 85 ? 'ready' : result.readiness.score >= 65 ? 'mid' : 'low'
+  const scoreClass =
+    result.readiness.score >= 85 ? '' : result.readiness.score >= 65 ? 'mid' : 'low'
+
   const languageRows = useMemo(
     () => Object.entries(result.analysis.languages).sort((a, b) => b[1] - a[1]),
     [result.analysis.languages],
@@ -31,123 +43,140 @@ export function Dashboard({
     URL.revokeObjectURL(url)
   }
 
+  const statusClass = result.readiness.score >= 85 ? 'ready' : result.readiness.score >= 65 ? 'mid' : 'low'
+
   return (
-    <div className="dashboard-grid">
-      <section className="primary-column">
-        <div className="repo-header panel">
-          <div>
-            <p className="eyebrow">Generated report</p>
-            <h2>{result.repo_url.replace('https://github.com/', '')}</h2>
-            <p className="repo-subtitle">Static scan, resume rubric, saved report, and AI mentor output.</p>
-          </div>
-          <div className="report-actions">
-            <button className="download-button" onClick={handleDownloadReport}>
-              Download report
-            </button>
-            <span className={`status-pill ${statusClass}`}>{result.readiness.status}</span>
+    <div>
+      {/* Score hero */}
+      <div className="score-hero">
+        <div className={`score-number${scoreClass ? ` ${scoreClass}` : ''}`}>
+          {result.readiness.score}
+        </div>
+        <div className="score-meta">
+          <p className="score-repo">{result.repo_url.replace('https://github.com/', '')}</p>
+          <div className="score-chips">
+            <span className="score-chip">{result.analysis.total_files.toLocaleString()} files</span>
+            <span className="score-chip">
+              {Object.keys(result.analysis.languages).length} languages
+            </span>
+            <span className="score-chip">{result.analysis.risks.length} risks</span>
           </div>
         </div>
+        <button className="score-download" onClick={handleDownloadReport}>
+          <Download size={14} />
+          Download report
+        </button>
+      </div>
 
-        <section className="metric-grid">
-          <Metric label="Readiness" value={`${result.readiness.score}/100`} icon={<Gauge size={18} />} />
-          <Metric label="Files" value={result.analysis.total_files.toLocaleString()} icon={<Code2 size={18} />} />
-          <Metric label="Languages" value={Object.keys(result.analysis.languages).length.toString()} icon={<Layers3 size={18} />} />
-          <Metric label="Risks" value={result.analysis.risks.length.toString()} icon={<AlertTriangle size={18} />} />
-        </section>
-
-        <section className="panel mentor-panel">
-          <div className="panel-heading">
-            <MessageSquareText size={19} />
-            <h3>AI Mentor Brief</h3>
-          </div>
-          <p>{result.mentor_feedback.mentor_summary}</p>
-        </section>
-
-        <section className="panel tab-panel">
-          <div className="tabs">
-            <button className={activeTab === 'resume' ? 'active' : ''} onClick={() => onTabChange('resume')}>
-              Resume bullets
-            </button>
-            <button className={activeTab === 'interview' ? 'active' : ''} onClick={() => onTabChange('interview')}>
-              Interview prep
-            </button>
-            <button className={activeTab === 'risks' ? 'active' : ''} onClick={() => onTabChange('risks')}>
-              Risk signals
-            </button>
-          </div>
-          <TabContent result={result} activeTab={activeTab} />
-        </section>
-
-        <section className="panel">
-          <div className="panel-heading">
-            <Code2 size={19} />
-            <h3>Technical Scan</h3>
-          </div>
-          <p className="summary">{result.report.summary}</p>
-          <div className="language-grid">
-            {languageRows.map(([language, count]) => (
-              <div className="language-card" key={language}>
-                <span>{language}</span>
-                <strong>{count}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-heading">
-            <Layers3 size={19} />
-            <h3>GitHub Profile Signals</h3>
-          </div>
-          <div className="metadata-grid">
-            <MetadataItem label="Description" value={result.github_metadata.description ? 'Present' : 'Missing'} />
-            <MetadataItem label="License" value={result.github_metadata.license_spdx_id ?? 'Missing'} />
-            <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
-            <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
-            <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
-            <MetadataItem label="Default branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
-          </div>
-          {result.github_metadata.topics.length > 0 && (
-            <div className="topic-list">
-              {result.github_metadata.topics.map((topic) => (
-                <span key={topic}>{topic}</span>
-              ))}
-            </div>
-          )}
-        </section>
+      {/* Metric grid */}
+      <section className="metric-grid">
+        <Metric label="Readiness" value={`${result.readiness.score}/100`} icon={<Gauge size={18} />} />
+        <Metric label="Files" value={result.analysis.total_files.toLocaleString()} icon={<Code2 size={18} />} />
+        <Metric label="Languages" value={Object.keys(result.analysis.languages).length.toString()} icon={<Layers3 size={18} />} />
+        <Metric label="Risks" value={result.analysis.risks.length.toString()} icon={<AlertTriangle size={18} />} />
       </section>
 
-      <aside className="inspector-column">
-        <section className="panel inspector-panel">
-          <div className="panel-heading">
-            <CheckCircle2 size={19} />
-            <h3>Readiness Inspector</h3>
-          </div>
-          <div className="score-ring">
-            <strong>{result.readiness.score}</strong>
-            <span>/100</span>
-          </div>
-          <div className="fix-list">
-            <h4>Next best fixes</h4>
-            {result.readiness.priority_fixes.slice(0, 4).map((fix, index) => (
-              <div className="fix-row" key={fix}>
-                <span>{index + 1}</span>
-                <p>{fix}</p>
-              </div>
+      {/* AI Mentor Brief */}
+      <section className="panel">
+        <div className="panel-heading">
+          <MessageSquareText size={19} />
+          <h3>AI Mentor Brief</h3>
+        </div>
+        <p className="summary">{result.mentor_feedback.mentor_summary}</p>
+      </section>
+
+      {/* Content tabs: resume / interview / risks */}
+      <section className="panel">
+        <nav className="content-tabs">
+          <button
+            className={`content-tab${activeTab === 'resume' ? ' active' : ''}`}
+            onClick={() => onTabChange('resume')}
+          >
+            Resume bullets
+          </button>
+          <button
+            className={`content-tab${activeTab === 'interview' ? ' active' : ''}`}
+            onClick={() => onTabChange('interview')}
+          >
+            Interview prep
+          </button>
+          <button
+            className={`content-tab${activeTab === 'risks' ? ' active' : ''}`}
+            onClick={() => onTabChange('risks')}
+          >
+            Risk signals
+          </button>
+        </nav>
+        <TabContent result={result} activeTab={activeTab} />
+      </section>
+
+      {/* Technical Scan */}
+      <section className="panel">
+        <div className="panel-heading">
+          <Code2 size={19} />
+          <h3>Technical Scan</h3>
+        </div>
+        <p className="summary">{result.report.summary}</p>
+        <div className="language-grid">
+          {languageRows.map(([language, count]) => (
+            <div className="language-card" key={language}>
+              <span>{language}</span>
+              <strong>{count}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* GitHub Profile Signals */}
+      <section className="panel">
+        <div className="panel-heading">
+          <Layers3 size={19} />
+          <h3>GitHub Profile Signals</h3>
+        </div>
+        <div className="metadata-grid">
+          <MetadataItem label="Description" value={result.github_metadata.description ? 'Present' : 'Missing'} />
+          <MetadataItem label="License" value={result.github_metadata.license_spdx_id ?? 'Missing'} />
+          <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
+          <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
+          <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
+          <MetadataItem label="Default branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
+        </div>
+        {result.github_metadata.topics.length > 0 && (
+          <div className="topic-list">
+            {result.github_metadata.topics.map((topic) => (
+              <span key={topic}>{topic}</span>
             ))}
           </div>
-        </section>
+        )}
+      </section>
 
-        <section className="panel checklist-panel">
-          <div className="panel-heading">
-            <ClipboardList size={19} />
-            <h3>Checklist</h3>
-          </div>
-          {result.readiness.checklist.map((item) => (
-            <ChecklistRow item={item} key={item.name} />
+      {/* Priority Fixes */}
+      <section className="panel">
+        <div className="panel-heading">
+          <CheckCircle2 size={19} />
+          <h3>Next Best Fixes</h3>
+        </div>
+        <div className="fix-list">
+          {result.readiness.priority_fixes.slice(0, 4).map((fix, index) => (
+            <div className="fix-row" key={fix}>
+              <span>{index + 1}</span>
+              <p>{fix}</p>
+            </div>
           ))}
-        </section>
-      </aside>
+        </div>
+      </section>
+
+      {/* Checklist */}
+      <section className="panel">
+        <div className="panel-heading">
+          <ClipboardList size={19} />
+          <h3>Checklist</h3>
+        </div>
+        <span className={`status-pill ${statusClass}`}>{result.readiness.status}</span>
+        {result.readiness.checklist.map((item) => (
+          <ChecklistRow item={item} key={item.name} />
+        ))}
+      </section>
     </div>
   )
 }
