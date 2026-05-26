@@ -3,37 +3,35 @@ import type { AnalyzeResponse } from '../types'
 export function ActionPlanView({ result }: { result: AnalyzeResponse }) {
   return (
     <section className="single-view">
-      <div className="repo-header panel">
-        <div>
-          <p className="eyebrow">Action plan</p>
-          <h2>What should this student fix next?</h2>
+      <div className="view-header">
+        <p className="view-header-eyebrow">Action Plan</p>
+        <div className="view-header-row">
+          <h2 className="view-header-title">What to fix next.</h2>
+          <span className="view-header-count">{result.action_plan.items.length} priority steps</span>
         </div>
-        <span className="status-pill ready">{result.action_plan.items.length} priority steps</span>
       </div>
 
       <div className="action-plan-grid">
         {result.action_plan.items.map((item, index) => (
-          <article className="panel action-step" key={`${item.title}-${index}`}>
-            <div className="action-step-index">{String(index + 1).padStart(2, '0')}</div>
-            <div>
-              <div className="action-step-header">
-                <span>{item.category}</span>
-                <h3>{item.title}</h3>
+          <article className="action-step-card" key={`${item.title}-${index}`}>
+            <span className="action-big-num">{String(index + 1).padStart(2, '0')}</span>
+            <div className="action-card-body">
+              <span className="action-card-category">{item.category}</span>
+              <h3 className="action-card-title">{item.title}</h3>
+              <div className="action-card-fields">
+                <div className="action-card-field">
+                  <span>Why</span>
+                  <p>{item.why_it_matters}</p>
+                </div>
+                <div className="action-card-field">
+                  <span>How</span>
+                  <p>{item.how_to_improve}</p>
+                </div>
+                <div className="action-card-field">
+                  <span>Resume</span>
+                  <p>{item.resume_impact}</p>
+                </div>
               </div>
-              <dl>
-                <div>
-                  <dt>Why it matters</dt>
-                  <dd>{item.why_it_matters}</dd>
-                </div>
-                <div>
-                  <dt>How to improve</dt>
-                  <dd>{item.how_to_improve}</dd>
-                </div>
-                <div>
-                  <dt>Resume impact</dt>
-                  <dd>{item.resume_impact}</dd>
-                </div>
-              </dl>
             </div>
           </article>
         ))}

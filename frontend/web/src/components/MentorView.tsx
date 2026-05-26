@@ -1,58 +1,42 @@
-import { FileQuestion, MessageSquareText, Sparkles } from 'lucide-react'
 import type { AnalyzeResponse } from '../types'
 
 export function MentorView({ result }: { result: AnalyzeResponse }) {
   return (
     <section className="single-view">
-      <div className="repo-header panel">
-        <div>
-          <p className="eyebrow">AI mentor</p>
-          <h2>Turn this repo into an interview story.</h2>
+      <div className="view-header">
+        <p className="view-header-eyebrow">AI Mentor</p>
+        <div className="view-header-row">
+          <h2 className="view-header-title">Turn this repo into an interview story.</h2>
         </div>
-        <span className="status-pill ready">OpenAI-backed</span>
       </div>
 
-      <section className="panel mentor-panel mentor-page">
-        <div className="panel-heading">
-          <MessageSquareText size={19} />
-          <h3>Mentor summary</h3>
-        </div>
-        <p>{result.mentor_feedback.mentor_summary}</p>
+      <section className="panel">
+        <p className="mentor-pull-quote">{result.mentor_feedback.mentor_summary}</p>
       </section>
 
-      <div className="mentor-page-grid">
-        <article className="panel">
-          <div className="panel-heading">
-            <Sparkles size={19} />
-            <h3>Resume bullets</h3>
-          </div>
-          <div className="card-list">
-            {result.mentor_feedback.resume_bullets.map((bullet, index) => (
-              <div className="content-card" key={bullet}>
-                <span>{String(index + 1).padStart(2, '0')}</span>
-                <p>{bullet}</p>
-              </div>
-            ))}
-          </div>
-        </article>
+      <section className="panel">
+        <p className="panel-eyebrow" style={{ marginBottom: 16 }}>Resume Bullets</p>
+        <div className="bullet-list">
+          {result.mentor_feedback.resume_bullets.map((bullet, index) => (
+            <div className="bullet-item" key={bullet}>
+              <span className="bullet-num">{String(index + 1).padStart(2, '0')}</span>
+              <p className="bullet-text">{bullet}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <article className="panel">
-          <div className="panel-heading">
-            <FileQuestion size={19} />
-            <h3>Interview questions</h3>
-          </div>
-          <div className="card-list">
-            {result.mentor_feedback.interview_questions.map((question, index) => (
-              <div className="content-card" key={question}>
-                <FileQuestion size={18} />
-                <p>
-                  <strong>Q{index + 1}.</strong> {question}
-                </p>
-              </div>
-            ))}
-          </div>
-        </article>
-      </div>
+      <section className="panel">
+        <p className="panel-eyebrow" style={{ marginBottom: 16 }}>Interview Questions</p>
+        <div className="bullet-list">
+          {result.mentor_feedback.interview_questions.map((question, index) => (
+            <div className="bullet-item" key={question}>
+              <span className="bullet-num">Q{index + 1}</span>
+              <p className="bullet-text">{question}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </section>
   )
 }

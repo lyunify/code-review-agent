@@ -2,18 +2,12 @@ import { useMemo } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
-  ClipboardList,
-  Code2,
   Download,
-  FileQuestion,
-  Gauge,
   Layers3,
-  MessageSquareText,
 } from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
 import type { AnalyzeResponse } from '../types'
 import type { Tab } from '../uiTypes'
-import { ChecklistRow, Metric } from './Shared'
 
 export function Dashboard({
   result,
@@ -26,11 +20,9 @@ export function Dashboard({
 }) {
   const scoreClass =
     result.readiness.score >= 85 ? '' : result.readiness.score >= 65 ? 'mid' : 'low'
+  const statusClass = result.readiness.score >= 85 ? 'ready' : result.readiness.score >= 65 ? 'mid' : 'low'
 
-  const languageRows = useMemo(
-    () => Object.entries(result.analysis.languages).sort((a, b) => b[1] - a[1]),
-    [result.analysis.languages],
-  )
+  const languageKeys = useMemo(() => Object.keys(result.analysis.languages), [result.analysis.languages])
 
   function handleDownloadReport() {
     const report = generateMarkdownReport(result)
@@ -43,49 +35,37 @@ export function Dashboard({
     URL.revokeObjectURL(url)
   }
 
-  const statusClass = result.readiness.score >= 85 ? 'ready' : result.readiness.score >= 65 ? 'mid' : 'low'
+  const mentorSnippet = result.mentor_feedback.mentor_summary.split(/\.\s/)[0] + '.'
 
   return (
     <div>
-      {/* Score hero */}
-      <div className="score-hero">
-        <div className={`score-number${scoreClass ? ` ${scoreClass}` : ''}`}>
-          {result.readiness.score}
+      {/* Split hero */}
+      <div className="split-hero">
+        <div className="split-hero-score">
+          <div className={`split-hero-num${scoreClass ? ` ${scoreClass}` : ''}`}>
+            {result.readiness.score}
+          </div>
+          <span className={`status-pill ${statusClass}`}>{result.readiness.status}</span>
         </div>
-        <div className="score-meta">
-          <p className="score-repo">{result.repo_url.replace('https://github.com/', '')}</p>
-          <div className="score-chips">
-            <span className="score-chip">{result.analysis.total_files.toLocaleString()} files</span>
-            <span className="score-chip">
-              {Object.keys(result.analysis.languages).length} languages
-            </span>
-            <span className="score-chip">{result.analysis.risks.length} risks</span>
+        <div className="split-hero-right">
+          <p className="split-hero-name">{result.repo_url.replace('https://github.com/', '')}</p>
+          <p className="split-hero-sub">
+            {result.readiness.score}/100 · {result.analysis.total_files.toLocaleString()} files · {languageKeys.length} languages · {result.analysis.risks.length} risks
+          </p>
+          <p className="split-hero-quote">{mentorSnippet}</p>
+          <div className="split-hero-fixes">
+            {result.readiness.priority_fixes.slice(0, 3).map((fix) => (
+              <span key={fix} className="split-hero-fix">+ {fix}</span>
+            ))}
           </div>
         </div>
-        <button className="score-download" onClick={handleDownloadReport}>
+        <button className="score-download" onClick={handleDownloadReport} style={{ margin: '20px 20px 20px 0', alignSelf: 'flex-start' }}>
           <Download size={14} />
-          Download report
+          Report
         </button>
       </div>
 
-      {/* Metric grid */}
-      <section className="metric-grid">
-        <Metric label="Readiness" value={`${result.readiness.score}/100`} icon={<Gauge size={18} />} />
-        <Metric label="Files" value={result.analysis.total_files.toLocaleString()} icon={<Code2 size={18} />} />
-        <Metric label="Languages" value={Object.keys(result.analysis.languages).length.toString()} icon={<Layers3 size={18} />} />
-        <Metric label="Risks" value={result.analysis.risks.length.toString()} icon={<AlertTriangle size={18} />} />
-      </section>
-
-      {/* AI Mentor Brief */}
-      <section className="panel">
-        <div className="panel-heading">
-          <MessageSquareText size={19} />
-          <h3>AI Mentor Brief</h3>
-        </div>
-        <p className="summary">{result.mentor_feedback.mentor_summary}</p>
-      </section>
-
-      {/* Content tabs: resume / interview / risks */}
+      {/* Resume / Interview / Risks tabs */}
       <section className="panel">
         <nav className="content-tabs">
           <button
@@ -110,23 +90,6 @@ export function Dashboard({
         <TabContent result={result} activeTab={activeTab} />
       </section>
 
-      {/* Technical Scan */}
-      <section className="panel">
-        <div className="panel-heading">
-          <Code2 size={19} />
-          <h3>Technical Scan</h3>
-        </div>
-        <p className="summary">{result.report.summary}</p>
-        <div className="language-grid">
-          {languageRows.map(([language, count]) => (
-            <div className="language-card" key={language}>
-              <span>{language}</span>
-              <strong>{count}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* GitHub Profile Signals */}
       <section className="panel">
         <div className="panel-heading">
@@ -139,7 +102,7 @@ export function Dashboard({
           <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
           <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
           <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
-          <MetadataItem label="Default branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
+          <MetadataItem label="Branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
         </div>
         {result.github_metadata.topics.length > 0 && (
           <div className="topic-list">
@@ -148,34 +111,6 @@ export function Dashboard({
             ))}
           </div>
         )}
-      </section>
-
-      {/* Priority Fixes */}
-      <section className="panel">
-        <div className="panel-heading">
-          <CheckCircle2 size={19} />
-          <h3>Next Best Fixes</h3>
-        </div>
-        <div className="fix-list">
-          {result.readiness.priority_fixes.slice(0, 4).map((fix, index) => (
-            <div className="fix-row" key={fix}>
-              <span>{index + 1}</span>
-              <p>{fix}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Checklist */}
-      <section className="panel">
-        <div className="panel-heading">
-          <ClipboardList size={19} />
-          <h3>Checklist</h3>
-        </div>
-        <span className={`status-pill ${statusClass}`}>{result.readiness.status}</span>
-        {result.readiness.checklist.map((item) => (
-          <ChecklistRow item={item} key={item.name} />
-        ))}
       </section>
     </div>
   )
@@ -193,11 +128,11 @@ function MetadataItem({ label, value }: { label: string; value: string }) {
 function TabContent({ result, activeTab }: { result: AnalyzeResponse; activeTab: Tab }) {
   if (activeTab === 'resume') {
     return (
-      <div className="card-list">
+      <div className="bullet-list">
         {result.mentor_feedback.resume_bullets.map((bullet, index) => (
-          <div className="content-card" key={bullet}>
-            <span>{String(index + 1).padStart(2, '0')}</span>
-            <p>{bullet}</p>
+          <div className="bullet-item" key={bullet}>
+            <span className="bullet-num">{String(index + 1).padStart(2, '0')}</span>
+            <p className="bullet-text">{bullet}</p>
           </div>
         ))}
       </div>
@@ -206,13 +141,11 @@ function TabContent({ result, activeTab }: { result: AnalyzeResponse; activeTab:
 
   if (activeTab === 'interview') {
     return (
-      <div className="card-list">
+      <div className="bullet-list">
         {result.mentor_feedback.interview_questions.map((question, index) => (
-          <div className="content-card" key={question}>
-            <FileQuestion size={18} />
-            <p>
-              <strong>Q{index + 1}.</strong> {question}
-            </p>
+          <div className="bullet-item" key={question}>
+            <span className="bullet-num">Q{index + 1}</span>
+            <p className="bullet-text">{question}</p>
           </div>
         ))}
       </div>
@@ -240,3 +173,4 @@ function TabContent({ result, activeTab }: { result: AnalyzeResponse; activeTab:
     </div>
   )
 }
+
