@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { analyzeRepository, fetchHistory } from './api'
+import { generateMarkdownReport, getReportFileName } from './report'
 import type { AnalyzeResponse, HistoryRecord, ReadinessChecklistItem } from './types'
 
 type Tab = 'resume' | 'interview' | 'risks'
@@ -152,6 +153,17 @@ function Dashboard({
     [result.analysis.languages],
   )
 
+  function handleDownloadReport() {
+    const report = generateMarkdownReport(result)
+    const blob = new Blob([report], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = getReportFileName(result)
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="dashboard-grid">
       <section className="primary-column">
@@ -160,7 +172,12 @@ function Dashboard({
             <p className="eyebrow">Generated report</p>
             <h2>{result.repo_url.replace('https://github.com/', '')}</h2>
           </div>
-          <span className={`status-pill ${statusClass}`}>{result.readiness.status}</span>
+          <div className="report-actions">
+            <button className="download-button" onClick={handleDownloadReport}>
+              Download report
+            </button>
+            <span className={`status-pill ${statusClass}`}>{result.readiness.status}</span>
+          </div>
         </div>
 
         <section className="metric-grid">
