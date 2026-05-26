@@ -2,6 +2,10 @@
 
 An AI-assisted repository readiness platform that helps CS students evaluate whether a GitHub project is strong enough to include on an SDE internship resume. It analyzes public repositories, scores project readiness, generates prioritized improvement plans, and turns technical signals into resume and interview preparation guidance.
 
+## Problem
+
+Students often know how to build class projects, but it is harder to judge whether a GitHub repository is polished enough for a resume or technical interview. Code Review Agent turns repository structure, documentation quality, test coverage signals, and project hygiene into actionable feedback for SDE internship preparation.
+
 ## Tech Stack
 
 - Backend: FastAPI
@@ -11,6 +15,27 @@ An AI-assisted repository readiness platform that helps CS students evaluate whe
 - Legacy prototype: Streamlit
 - Core logic: Python services
 - Tests: pytest, Vitest
+
+## Architecture
+
+The project is organized as a full-stack web application with a service-oriented backend:
+
+```text
+React + TypeScript frontend
+        |
+        | HTTP JSON API
+        v
+FastAPI backend
+        |
+        |-- repo_loader: clones public GitHub repositories
+        |-- analyzer: scans files, languages, README quality, tests, and risk signals
+        |-- readiness: calculates checklist-based resume readiness scores
+        |-- action_plan: generates prioritized improvement tasks
+        |-- mentor_agent: creates AI mentor feedback with fallback logic
+        |-- db: saves and restores analysis history with SQLite
+```
+
+More details are available in [`docs/architecture.md`](docs/architecture.md).
 
 ## Product Capabilities
 
@@ -23,6 +48,16 @@ An AI-assisted repository readiness platform that helps CS students evaluate whe
 - Produce AI mentor feedback with resume bullets, interview questions, and next steps.
 - Save analysis history in SQLite and reopen saved reports from the dashboard.
 - Export a Markdown readiness report for portfolio review or interview preparation.
+
+## How It Works
+
+1. A user enters a public GitHub repository URL.
+2. The backend clones the repository into a temporary local workspace.
+3. Static analysis inspects files, directories, languages, README quality, tests, dependency manifests, docs, and risk signals.
+4. The readiness service calculates a resume-readiness score from deterministic checklist rules.
+5. The action plan service converts missing signals into prioritized improvement tasks.
+6. The mentor agent generates resume bullets, interview questions, and next steps using OpenAI when configured, with a local fallback for reliable demos.
+7. The result is saved to SQLite so previous reports can be reopened from the dashboard.
 
 ## Screenshots
 
@@ -72,6 +107,20 @@ source .venv/bin/activate
 pytest
 ```
 
+Run frontend tests:
+
+```bash
+cd frontend/web
+npm test
+```
+
+Build the React frontend:
+
+```bash
+cd frontend/web
+npm run build
+```
+
 ## Run Backend
 
 ```bash
@@ -106,3 +155,19 @@ cd frontend
 - `POST /api/analyze`: clone and analyze a public repository.
 - `GET /api/history`: return recent saved analysis records.
 - `GET /api/history/{record_id}`: reopen a saved analysis report.
+
+## Engineering Notes
+
+- The backend keeps HTTP route handlers thin and places business logic in testable service modules.
+- The readiness score is deterministic so results are explainable and repeatable.
+- AI feedback is treated as an enhancement, not a hard dependency; local fallback logic keeps the app usable without an API key.
+- The React frontend is split into typed components for dashboard, rubric, action plan, mentor feedback, loading state, and sidebar navigation.
+- Demo mode provides a stable offline result for presentations and future screenshots.
+
+## Future Improvements
+
+- Replace screenshot placeholders with polished dashboard, action plan, and mentor view screenshots.
+- Deploy the React frontend and FastAPI backend for public demos.
+- Add GitHub API support for richer metadata such as stars, commit history, and repository topics.
+- Add per-user saved reports and authentication.
+- Support private repositories through secure GitHub OAuth.
