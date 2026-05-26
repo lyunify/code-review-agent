@@ -13,6 +13,10 @@ ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
-ignore_missing_imports = true
 disallow_untyped_defs = true
 warn_return_any = true
+
+[[tool.mypy.overrides]]
+# gitpython, streamlit, and requests ship no inline type stubs
+module = ["git.*", "streamlit.*", "requests.*"]
+ignore_missing_imports = true
