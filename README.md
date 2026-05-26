@@ -51,3 +51,10 @@ cd frontend
 - Identify largest files and long files.
 - Detect missing README and missing test files.
 - Generate a concise review summary.
+- Save recent analysis history in SQLite.
+
+## API Endpoints
+
+- `GET /health`: backend health check.
+- `POST /api/analyze`: clone and analyze a public repository.
+- `GET /api/history`: return recent saved analysis records.

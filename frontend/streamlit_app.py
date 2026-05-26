@@ -2,6 +2,7 @@ import requests
 import streamlit as st
 
 API_URL = "http://127.0.0.1:8000/api/analyze"
+HISTORY_URL = "http://127.0.0.1:8000/api/history"
 
 st.set_page_config(page_title="Code Review Agent", layout="wide")
 
@@ -69,3 +70,18 @@ if analyze_clicked:
                     )
                 else:
                     st.success("No risk signals found in the first-pass scan.")
+
+st.divider()
+st.subheader("Recent Analyses")
+
+try:
+    history_response = requests.get(HISTORY_URL, timeout=10)
+    history_response.raise_for_status()
+    history = history_response.json()["records"]
+except requests.RequestException:
+    st.info("Start the backend server to view saved analysis history.")
+else:
+    if history:
+        st.dataframe(history, use_container_width=True, hide_index=True)
+    else:
+        st.caption("No analyses saved yet.")

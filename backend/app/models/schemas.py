@@ -37,3 +37,18 @@ class AnalyzeResponse(BaseModel):
     repo_url: str
     analysis: RepositoryAnalysis
     report: ReviewReport
+
+
+class AnalysisHistoryRecord(BaseModel):
+    id: int
+    repo_url: str
+    created_at: str
+    total_files: int
+    total_directories: int
+    language_count: int
+    risk_count: int
+    summary: str
+
+
+class AnalysisHistoryResponse(BaseModel):
+    records: list[AnalysisHistoryRecord]

@@ -4,7 +4,7 @@
 
 ## Backend
 
-The FastAPI backend accepts analysis requests, clones public repositories, runs static analysis, and returns structured JSON. The API layer stays thin; core behavior lives in services so it can be tested without HTTP.
+The FastAPI backend accepts analysis requests, clones public repositories, runs static analysis, saves a compact history record in SQLite, and returns structured JSON. The API layer stays thin; core behavior lives in services so it can be tested without HTTP.
 
 ## Frontend
 
@@ -15,4 +15,5 @@ The Streamlit frontend is a lightweight dashboard. It calls the backend API, the
 - `repo_loader`: gets source code onto disk.
 - `analyzer`: inspects files and computes metrics.
 - `report_generator`: turns metrics into user-facing interpretation.
+- `db`: stores recent analysis history in SQLite.
 - `routes`: handles HTTP request and response flow.
