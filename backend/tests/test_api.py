@@ -42,7 +42,7 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
         "app.api.routes.fetch_github_metadata",
         lambda repo_url: GitHubMetadata(available=True, full_name="example/demo", license_spdx_id="MIT"),
     )
-    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
+    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"))
 
     client = TestClient(app)
     response = client.post("/api/analyze", json={"repo_url": "https://github.com/example/demo"})
@@ -74,7 +74,7 @@ def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) ->
         "app.api.routes.fetch_github_metadata",
         lambda repo_url: GitHubMetadata(available=True, full_name="example/demo"),
     )
-    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
+    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"))
 
     client = TestClient(app)
     analyze_response = client.post("/api/analyze", json={"repo_url": "https://github.com/example/demo"})
@@ -108,7 +108,7 @@ def test_history_detail_endpoint_returns_full_saved_report(monkeypatch, tmp_path
         "app.api.routes.fetch_github_metadata",
         lambda repo_url: GitHubMetadata(available=True, full_name="example/demo", topics=["fastapi"]),
     )
-    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
+    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"))
 
     client = TestClient(app)
     analyze_response = client.post("/api/analyze", json={"repo_url": "https://github.com/example/demo"})
@@ -129,7 +129,7 @@ def test_history_detail_endpoint_returns_full_saved_report(monkeypatch, tmp_path
 
 
 def test_history_detail_endpoint_returns_404_for_missing_record(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(tmp_path / "history.db"))
+    monkeypatch.setattr("app.api.routes.history_store", AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"))
 
     client = TestClient(app)
     response = client.get("/api/history/999")

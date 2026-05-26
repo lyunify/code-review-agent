@@ -14,7 +14,7 @@ from app.models.schemas import (
 
 
 def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
-    store = AnalysisHistoryStore(tmp_path / "history.db")
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
     analysis = RepositoryAnalysis(
         total_files=3,
         total_directories=1,
@@ -92,3 +92,9 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
     assert detail.action_plan.items[0].title == "Add screenshots"
     assert detail.github_metadata.full_name == "example/demo"
     assert detail.github_metadata.license_spdx_id == "MIT"
+
+
+def test_get_analysis_returns_none_for_missing_id(tmp_path: Path) -> None:
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    result = store.get_analysis(9999)
+    assert result is None

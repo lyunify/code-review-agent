@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 IGNORED_DIRECTORIES = {
@@ -49,3 +50,6 @@ MAX_FILE_BYTES_TO_READ = 200_000
 
 def is_ignored_path(path: Path) -> bool:
     return any(part in IGNORED_DIRECTORIES for part in path.parts)
+
+
+DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./analysis_history.db")
