@@ -1,14 +1,36 @@
 # Code Review Agent
 
-A Python-based repository analysis app that helps CS students judge whether a GitHub project is ready to put on a resume. It performs deterministic static analysis, calculates a resume readiness score, and presents a report through a FastAPI backend and Streamlit dashboard.
+An AI-assisted repository readiness platform that helps CS students evaluate whether a GitHub project is strong enough to include on an SDE internship resume. It analyzes public repositories, scores project readiness, generates prioritized improvement plans, and turns technical signals into resume and interview preparation guidance.
 
 ## Tech Stack
 
 - Backend: FastAPI
 - Frontend: React, TypeScript, Vite
-- Legacy quick demo: Streamlit
+- Data storage: SQLite
+- AI feedback: OpenAI API with rule-based fallback
+- Legacy prototype: Streamlit
 - Core logic: Python services
 - Tests: pytest, Vitest
+
+## Product Capabilities
+
+- Analyze public GitHub repositories from a URL.
+- Score resume readiness with a checklist-based rubric.
+- Inspect repository structure, languages, file counts, largest files, and risk signals.
+- Evaluate README quality, setup instructions, usage notes, tech stack documentation, and demo assets.
+- Detect project hygiene signals such as tests, dependency files, docs, `.gitignore`, and `.env.example`.
+- Generate prioritized action plans that explain what to fix, why it matters, and how it improves resume value.
+- Produce AI mentor feedback with resume bullets, interview questions, and next steps.
+- Save analysis history in SQLite and reopen saved reports from the dashboard.
+- Export a Markdown readiness report for portfolio review or interview preparation.
+
+## Screenshots
+
+Screenshots will be added after the frontend polish pass.
+
+| Dashboard | Action Plan | AI Mentor |
+| --- | --- | --- |
+| _Coming soon_ | _Coming soon_ | _Coming soon_ |
 
 ## Local Setup
 
@@ -70,25 +92,9 @@ cd frontend
 ../backend/.venv/bin/streamlit run streamlit_app.py
 ```
 
-## Day 1 Features
-
-- Analyze a public GitHub repository URL.
-- Count source files and directories.
-- Show language distribution.
-- Identify largest files and long files.
-- Detect missing README and missing test files.
-- Generate a concise review summary.
-- Save recent analysis history in SQLite.
-- Calculate a resume readiness score with checklist-based feedback.
-- Prioritize fixes before adding a project to a resume.
-- Check README quality signals such as purpose, setup, usage, tech stack, and demo assets.
-- Consider dependency files, docs, project structure, long files, and risk density.
-- Generate mock mentor feedback with resume bullets, interview questions, and next steps.
-- Use OpenAI-backed mentor feedback when `OPENAI_API_KEY` is configured, with rule-based fallback.
-- Present results in a React + TypeScript dashboard for a more polished portfolio demo.
-
 ## API Endpoints
 
 - `GET /health`: backend health check.
 - `POST /api/analyze`: clone and analyze a public repository.
 - `GET /api/history`: return recent saved analysis records.
+- `GET /api/history/{record_id}`: reopen a saved analysis report.
