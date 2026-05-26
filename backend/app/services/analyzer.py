@@ -21,6 +21,10 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     directory_paths: set[Path] = set()
     has_readme = False
     has_tests = False
+    has_gitignore = False
+    has_env_example = False
+    readme_has_setup = False
+    readme_has_usage = False
 
     for path in root.rglob("*"):
         relative_path = path.relative_to(root)
@@ -50,8 +54,15 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
 
         if _looks_like_readme(path.name):
             has_readme = True
+            readme_text = _read_small_text_file(path)
+            readme_has_setup = readme_has_setup or _contains_setup_instructions(readme_text)
+            readme_has_usage = readme_has_usage or _contains_usage_instructions(readme_text)
         if _looks_like_test_path(relative_path):
             has_tests = True
+        if path.name == ".gitignore":
+            has_gitignore = True
+        if path.name in {".env.example", ".env.sample", "env.example"}:
+            has_env_example = True
 
     largest_files = sorted(files, key=lambda file: file.size_bytes, reverse=True)[:MAX_LARGEST_FILES]
     risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
@@ -64,6 +75,10 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
         risks=risks,
         has_readme=has_readme,
         has_tests=has_tests,
+        has_gitignore=has_gitignore,
+        has_env_example=has_env_example,
+        readme_has_setup=readme_has_setup,
+        readme_has_usage=readme_has_usage,
     )
 
 
@@ -81,8 +96,46 @@ def _count_lines(path: Path) -> int:
         return 0
 
 
+def _read_small_text_file(path: Path) -> str:
+    if path.stat().st_size > MAX_FILE_BYTES_TO_READ:
+        return ""
+
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore").lower()
+    except OSError:
+        return ""
+
+
 def _looks_like_readme(file_name: str) -> bool:
     return file_name.lower().startswith("readme")
+
+
+def _contains_setup_instructions(text: str) -> bool:
+    setup_markers = [
+        "installation",
+        "install",
+        "setup",
+        "getting started",
+        "how to run",
+        "local setup",
+        "pip install",
+        "npm install",
+    ]
+    return any(marker in text for marker in setup_markers)
+
+
+def _contains_usage_instructions(text: str) -> bool:
+    usage_markers = [
+        "usage",
+        "demo",
+        "example",
+        "screenshot",
+        "run",
+        "uvicorn",
+        "streamlit",
+        "python ",
+    ]
+    return any(marker in text for marker in usage_markers)
 
 
 def _looks_like_test_path(relative_path: Path) -> bool:

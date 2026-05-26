@@ -1,6 +1,6 @@
 # Code Review Agent
 
-A Python-based repository analysis app for reviewing GitHub projects. The Day 1 version performs deterministic static analysis and presents a report through a FastAPI backend and Streamlit dashboard.
+A Python-based repository analysis app that helps CS students judge whether a GitHub project is ready to put on a resume. It performs deterministic static analysis, calculates a resume readiness score, and presents a report through a FastAPI backend and Streamlit dashboard.
 
 ## Tech Stack
 
@@ -52,6 +52,8 @@ cd frontend
 - Detect missing README and missing test files.
 - Generate a concise review summary.
 - Save recent analysis history in SQLite.
+- Calculate a resume readiness score with checklist-based feedback.
+- Prioritize fixes before adding a project to a resume.
 
 ## API Endpoints
 

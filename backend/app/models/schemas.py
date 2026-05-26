@@ -26,6 +26,24 @@ class RepositoryAnalysis(BaseModel):
     risks: list[RiskSignal]
     has_readme: bool
     has_tests: bool
+    has_gitignore: bool = False
+    has_env_example: bool = False
+    readme_has_setup: bool = False
+    readme_has_usage: bool = False
+
+
+class ReadinessChecklistItem(BaseModel):
+    name: str
+    passed: bool
+    points: int
+    recommendation: str
+
+
+class ResumeReadiness(BaseModel):
+    score: int
+    status: str
+    checklist: list[ReadinessChecklistItem]
+    priority_fixes: list[str]
 
 
 class ReviewReport(BaseModel):
@@ -37,6 +55,7 @@ class AnalyzeResponse(BaseModel):
     repo_url: str
     analysis: RepositoryAnalysis
     report: ReviewReport
+    readiness: ResumeReadiness
 
 
 class AnalysisHistoryRecord(BaseModel):

@@ -9,9 +9,16 @@ from app.main import app
 def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    (repo_dir / "README.md").write_text("# Demo\n", encoding="utf-8")
-    (repo_dir / "main.py").write_text("print('hello')\n", encoding="utf-8")
-    (repo_dir / "test_main.py").write_text("def test_main():\n    assert True\n", encoding="utf-8")
+    (repo_dir / "README.md").write_text(
+        "# Demo\n\n## Setup\n\nRun `pip install -r requirements.txt`.\n\n## Usage\n\nRun the app locally.\n",
+        encoding="utf-8",
+    )
+    (repo_dir / ".gitignore").write_text(".venv/\n", encoding="utf-8")
+    (repo_dir / ".env.example").write_text("API_KEY=\n", encoding="utf-8")
+    (repo_dir / "src").mkdir()
+    (repo_dir / "src" / "main.py").write_text("print('hello')\n", encoding="utf-8")
+    (repo_dir / "tests").mkdir()
+    (repo_dir / "tests" / "test_main.py").write_text("def test_main():\n    assert True\n", encoding="utf-8")
 
     def fake_clone_repository(repo_url: str) -> Path:
         assert repo_url == "https://github.com/example/demo"
@@ -26,8 +33,10 @@ def test_analyze_endpoint_returns_report(monkeypatch, tmp_path: Path) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["repo_url"] == "https://github.com/example/demo"
-    assert payload["analysis"]["total_files"] == 3
+    assert payload["analysis"]["total_files"] == 5
     assert "summary" in payload["report"]
+    assert payload["readiness"]["score"] >= 65
+    assert payload["readiness"]["status"] in {"Almost ready", "Resume-ready"}
 
 
 def test_history_endpoint_returns_saved_analysis(monkeypatch, tmp_path: Path) -> None:
