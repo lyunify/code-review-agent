@@ -9,10 +9,12 @@ export function LoadingWorkbench({ repoUrl }: { repoUrl: string }) {
   ]
 
   return (
-    <section className="loading-workbench panel">
+    <section className="panel">
       <div>
-        <p className="eyebrow">Analysis pipeline</p>
-        <h2>Reviewing {repoUrl.replace('https://github.com/', '')}</h2>
+        <p className="panel-eyebrow">Analysis pipeline</p>
+        <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginTop: 4 }}>
+          Reviewing {repoUrl.replace('https://github.com/', '')}
+        </p>
       </div>
       <div className="loading-steps">
         {steps.map((step, index) => (
