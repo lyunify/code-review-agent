@@ -26,11 +26,19 @@ An AI-assisted repository readiness platform that helps CS students evaluate whe
 
 ## Screenshots
 
-Screenshots will be added after the frontend polish pass.
+Screenshots will be added after the frontend polish pass. The placeholders below mark the planned README layout.
 
-| Dashboard | Action Plan | AI Mentor |
-| --- | --- | --- |
-| _Coming soon_ | _Coming soon_ | _Coming soon_ |
+### Screenshot 1: Repository Review Dashboard
+
+_Placeholder: main dashboard with readiness score, repository metrics, mentor brief, and checklist inspector._
+
+### Screenshot 2: Prioritized Action Plan
+
+_Placeholder: action plan view showing what to fix next, why it matters, and how it improves resume value._
+
+### Screenshot 3: AI Mentor Feedback
+
+_Placeholder: AI mentor view with resume bullets and interview preparation questions._
 
 ## Local Setup
 
