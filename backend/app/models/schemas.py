@@ -82,10 +82,18 @@ class ReviewReport(BaseModel):
     recommendations: list[str]
 
 
+class InterviewQuestion(BaseModel):
+    question: str
+    situation: str
+    task: str
+    action: str
+    result: str
+
+
 class MentorFeedback(BaseModel):
     mentor_summary: str
     resume_bullets: list[str]
-    interview_questions: list[str]
+    interview_questions: list[InterviewQuestion]
     next_steps: list[str]
 
 

@@ -144,10 +144,10 @@ function TabContent({ result, activeTab }: { result: AnalyzeResponse; activeTab:
   if (activeTab === 'interview') {
     return (
       <div className="bullet-list">
-        {result.mentor_feedback.interview_questions.map((question, index) => (
-          <div className="bullet-item" key={question}>
+        {result.mentor_feedback.interview_questions.map((q, index) => (
+          <div className="bullet-item" key={q.question}>
             <span className="bullet-num">Q{index + 1}</span>
-            <p className="bullet-text">{question}</p>
+            <p className="bullet-text">{q.question}</p>
           </div>
         ))}
       </div>

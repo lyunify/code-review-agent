@@ -39,6 +39,9 @@ def test_mentor_agent_generates_resume_and_interview_guidance() -> None:
     assert len(feedback.resume_bullets) == 3
     assert "Python" in feedback.resume_bullets[0]
     assert len(feedback.interview_questions) >= 4
+    assert all(hasattr(q, 'question') for q in feedback.interview_questions)
+    assert all(hasattr(q, 'situation') for q in feedback.interview_questions)
+    assert all(hasattr(q, 'action') for q in feedback.interview_questions)
     assert len(feedback.next_steps) >= 1
 
 
@@ -72,7 +75,7 @@ def test_mentor_agent_focuses_on_priority_fixes_for_weaker_project() -> None:
 
     assert "Toy project" in feedback.mentor_summary
     assert feedback.next_steps[:2] == readiness.priority_fixes
-    assert any("testing" in question.lower() for question in feedback.interview_questions)
+    assert any("testing" in q.question.lower() for q in feedback.interview_questions)
 
 
 def test_mentor_agent_uses_openai_client_when_enabled() -> None:
@@ -94,7 +97,10 @@ def test_mentor_agent_uses_openai_client_when_enabled() -> None:
     expected_feedback = {
         "mentor_summary": "OpenAI generated mentor summary.",
         "resume_bullets": ["Bullet one", "Bullet two", "Bullet three"],
-        "interview_questions": ["Question one?", "Question two?"],
+        "interview_questions": [
+            {"question": "Question one?", "situation": "S1", "task": "T1", "action": "A1", "result": "R1"},
+            {"question": "Question two?", "situation": "S2", "task": "T2", "action": "A2", "result": "R2"},
+        ],
         "next_steps": ["Step one", "Step two"],
     }
 
@@ -117,6 +123,7 @@ def test_mentor_agent_uses_openai_client_when_enabled() -> None:
 
     assert feedback.mentor_summary == "OpenAI generated mentor summary."
     assert feedback.resume_bullets == ["Bullet one", "Bullet two", "Bullet three"]
+    assert feedback.interview_questions[0].question == "Question one?"
 
 
 def test_mentor_agent_falls_back_when_openai_fails() -> None:

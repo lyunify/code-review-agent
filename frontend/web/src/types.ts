@@ -58,10 +58,18 @@ export type ReviewReport = {
   recommendations: string[]
 }
 
+export type InterviewQuestion = {
+  question: string
+  situation: string
+  task: string
+  action: string
+  result: string
+}
+
 export type MentorFeedback = {
   mentor_summary: string
   resume_bullets: string[]
-  interview_questions: string[]
+  interview_questions: InterviewQuestion[]
   next_steps: string[]
 }
 

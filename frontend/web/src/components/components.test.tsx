@@ -60,7 +60,22 @@ const mockResult: AnalyzeResponse = {
   mentor_feedback: {
     mentor_summary: 'Good foundational project, needs more tests.',
     resume_bullets: ['Built a full-stack app', 'Implemented REST API'],
-    interview_questions: ['How did you structure the backend?', 'What testing strategy did you use?'],
+    interview_questions: [
+      {
+        question: 'How did you structure the backend?',
+        situation: 'I built this project to solve a real problem.',
+        task: 'I was responsible for the overall architecture.',
+        action: 'I separated concerns into service modules.',
+        result: 'The structure made testing straightforward.',
+      },
+      {
+        question: 'What testing strategy did you use?',
+        situation: 'I needed confidence the core logic was correct.',
+        task: 'I had to choose what to test first.',
+        action: 'I focused on the business logic layer.',
+        result: 'Tests caught several regressions during development.',
+      },
+    ],
     next_steps: ['Add tests', 'Add CI'],
   },
   action_plan: {

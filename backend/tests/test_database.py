@@ -44,7 +44,7 @@ def test_history_store_saves_and_lists_analysis_records(tmp_path: Path) -> None:
     mentor_feedback = MentorFeedback(
         mentor_summary="This project is close to resume-ready.",
         resume_bullets=["Built a Python repository analyzer."],
-        interview_questions=["How does the analyzer score projects?"],
+        interview_questions=[{"question": "How does the analyzer score projects?", "situation": "S", "task": "T", "action": "A", "result": "R"}],
         next_steps=["Add screenshots."],
     )
     action_plan = ActionPlan(

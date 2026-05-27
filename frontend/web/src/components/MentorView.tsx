@@ -1,8 +1,6 @@
 import type { AnalyzeResponse } from '../types'
 
 export function MentorView({ result }: { result: AnalyzeResponse }) {
-  const repoShort = result.repo_url.replace('https://github.com/', '')
-
   return (
     <section className="single-view">
       <div className="view-header">
@@ -37,32 +35,28 @@ export function MentorView({ result }: { result: AnalyzeResponse }) {
       </p>
 
       <div className="interview-cards">
-        {result.mentor_feedback.interview_questions.map((question, i) => (
-          <article className="interview-card" key={question}>
+        {result.mentor_feedback.interview_questions.map((q, i) => (
+          <article className="interview-card" key={q.question}>
             <div className="interview-card-q">
               <span className="interview-q-num">Q{i + 1}</span>
-              <p className="interview-q-text">{question}</p>
+              <p className="interview-q-text">{q.question}</p>
             </div>
             <div className="star-grid">
               <div className="star-row">
                 <span className="star-label">Situation</span>
-                <p className="star-hint">
-                  Set the scene: "I built <em>{repoShort}</em> to solve…" — give context in one sentence.
-                </p>
+                <p className="star-hint">{q.situation}</p>
               </div>
               <div className="star-row">
                 <span className="star-label">Task</span>
-                <p className="star-hint">What were you specifically responsible for on this project?</p>
+                <p className="star-hint">{q.task}</p>
               </div>
               <div className="star-row">
                 <span className="star-label">Action</span>
-                <p className="star-hint">
-                  Draw from your talking points above — pick the one most relevant to this question.
-                </p>
+                <p className="star-hint">{q.action}</p>
               </div>
               <div className="star-row">
                 <span className="star-label">Result</span>
-                <p className="star-hint">What did you ship, learn, or improve? Quantify if you can.</p>
+                <p className="star-hint">{q.result}</p>
               </div>
             </div>
           </article>
