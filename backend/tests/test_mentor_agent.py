@@ -35,7 +35,7 @@ def test_mentor_agent_generates_resume_and_interview_guidance() -> None:
         readiness=readiness,
     )
 
-    assert "Resume-ready" in feedback.mentor_summary
+    assert "Strong project" in feedback.mentor_summary
     assert len(feedback.resume_bullets) == 3
     assert "Python" in feedback.resume_bullets[0]
     assert len(feedback.interview_questions) >= 4
@@ -70,7 +70,7 @@ def test_mentor_agent_focuses_on_priority_fixes_for_weaker_project() -> None:
         readiness=readiness,
     )
 
-    assert "Needs work" in feedback.mentor_summary
+    assert "Toy project" in feedback.mentor_summary
     assert feedback.next_steps[:2] == readiness.priority_fixes
     assert any("testing" in question.lower() for question in feedback.interview_questions)
 
@@ -152,5 +152,37 @@ def test_mentor_agent_falls_back_when_openai_fails() -> None:
         use_openai=True,
     )
 
-    assert "Almost ready" in feedback.mentor_summary
+    assert "Borderline project" in feedback.mentor_summary
     assert len(feedback.resume_bullets) == 3
+
+
+def test_mentor_summary_follows_verdict_format() -> None:
+    """mentor_summary must start with a verdict word and contain 3 sentences."""
+    analysis = RepositoryAnalysis(
+        total_files=20,
+        total_directories=6,
+        languages={"Python": 15, "TypeScript": 5},
+        largest_files=[],
+        risks=[],
+        has_readme=True,
+        has_tests=True,
+        has_gitignore=True,
+        has_env_example=True,
+        has_ci_config=True,
+    )
+    readiness = ResumeReadiness(
+        score=88,
+        status="Resume-ready",
+        checklist=[],
+        priority_fixes=["Project looks ready for a resume review pass."],
+    )
+
+    feedback = generate_mentor_feedback(
+        repo_url="https://github.com/example/demo",
+        analysis=analysis,
+        readiness=readiness,
+    )
+
+    assert feedback.mentor_summary.startswith("Strong project")
+    sentences = [s.strip() for s in feedback.mentor_summary.split(".") if s.strip()]
+    assert len(sentences) >= 3

@@ -94,7 +94,10 @@ def _run_analysis(
 
         job.progress = "Generating mentor feedback..."
         mentor_feedback = generate_mentor_feedback(
-            repo_url=repo_url, analysis=analysis, readiness=readiness
+            repo_url=repo_url,
+            analysis=analysis,
+            readiness=readiness,
+            github_metadata=github_metadata,
         )
 
         history_store.save_analysis(

@@ -4,7 +4,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from app.models.schemas import MentorFeedback, RepositoryAnalysis, ResumeReadiness
+from app.models.schemas import GitHubMetadata, MentorFeedback, RepositoryAnalysis, ResumeReadiness
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ def generate_mentor_feedback(
     repo_url: str,
     analysis: RepositoryAnalysis,
     readiness: ResumeReadiness,
+    github_metadata: GitHubMetadata | None = None,
     openai_client: Any | None = None,
     use_openai: bool | None = None,
 ) -> MentorFeedback:
@@ -26,22 +27,34 @@ def generate_mentor_feedback(
                 repo_url=repo_url,
                 analysis=analysis,
                 readiness=readiness,
+                github_metadata=github_metadata,
                 openai_client=openai_client,
             )
             logger.info("Mentor feedback generated via OpenAI")
             return result
         except Exception as exc:
             logger.warning("OpenAI unavailable, falling back to rule-based: %s", exc)
-            return _generate_rule_based_feedback(repo_url=repo_url, analysis=analysis, readiness=readiness)
+            return _generate_rule_based_feedback(
+                repo_url=repo_url,
+                analysis=analysis,
+                readiness=readiness,
+                github_metadata=github_metadata,
+            )
 
     logger.info("Mentor feedback generated via rule-based fallback")
-    return _generate_rule_based_feedback(repo_url=repo_url, analysis=analysis, readiness=readiness)
+    return _generate_rule_based_feedback(
+        repo_url=repo_url,
+        analysis=analysis,
+        readiness=readiness,
+        github_metadata=github_metadata,
+    )
 
 
 def _generate_rule_based_feedback(
     repo_url: str,
     analysis: RepositoryAnalysis,
     readiness: ResumeReadiness,
+    github_metadata: GitHubMetadata | None = None,
 ) -> MentorFeedback:
     project_name = _project_name_from_url(repo_url)
     primary_language = _primary_language(analysis)
@@ -67,7 +80,8 @@ def _generate_openai_feedback(
     repo_url: str,
     analysis: RepositoryAnalysis,
     readiness: ResumeReadiness,
-    openai_client: Any | None,
+    github_metadata: GitHubMetadata | None = None,
+    openai_client: Any | None = None,
 ) -> MentorFeedback:
     client = openai_client or _create_openai_client()
     response = client.responses.parse(
@@ -76,14 +90,22 @@ def _generate_openai_feedback(
             {
                 "role": "system",
                 "content": (
-                    "You are a practical SDE internship mentor. Generate concise, honest, "
-                    "resume-focused feedback for a CS student GitHub project. Do not invent "
-                    "features that are not supported by the repository signals."
+                    "You are a senior software engineer who has interviewed over 100 SDE intern "
+                    "candidates at top tech companies. You review GitHub projects with honest, "
+                    "direct judgment. Your job is to tell students the truth about whether their "
+                    "project is strong enough to present in interviews — not to encourage them, "
+                    "but to prepare them for reality. "
+                    "Do not invent features that are not supported by the repository signals."
                 ),
             },
             {
                 "role": "user",
-                "content": _build_openai_prompt(repo_url=repo_url, analysis=analysis, readiness=readiness),
+                "content": _build_openai_prompt(
+                    repo_url=repo_url,
+                    analysis=analysis,
+                    readiness=readiness,
+                    github_metadata=github_metadata,
+                ),
             },
         ],
         text_format=MentorFeedback,
@@ -92,7 +114,6 @@ def _generate_openai_feedback(
     parsed = response.output_parsed
     if isinstance(parsed, MentorFeedback):
         return parsed
-    # output_parsed may be Any when the SDK lacks precise generics; model_validate returns Self
     return MentorFeedback.model_validate(parsed)  # type: ignore[no-any-return]
 
 
@@ -106,20 +127,41 @@ def _build_openai_prompt(
     repo_url: str,
     analysis: RepositoryAnalysis,
     readiness: ResumeReadiness,
+    github_metadata: GitHubMetadata | None = None,
 ) -> str:
     failed_items = [item for item in readiness.checklist if not item.passed]
+
+    github_lines = ""
+    if github_metadata:
+        if github_metadata.description:
+            github_lines += f"GitHub description: {github_metadata.description}\n"
+        if github_metadata.topics:
+            github_lines += f"GitHub topics: {', '.join(github_metadata.topics)}\n"
+        if github_metadata.is_fork:
+            github_lines += "Is fork: yes\n"
+
     return (
         f"Repository URL: {repo_url}\n"
+        f"{github_lines}"
         f"Total files: {analysis.total_files}\n"
         f"Total directories: {analysis.total_directories}\n"
         f"Languages: {analysis.languages}\n"
+        f"Has tests: {analysis.has_tests}\n"
+        f"Has CI: {analysis.has_ci_config}\n"
+        f"Has full-stack structure: {analysis.has_frontend_backend_structure}\n"
         f"Risk count: {len(analysis.risks)}\n"
         f"Readiness score: {readiness.score}/100\n"
         f"Readiness status: {readiness.status}\n"
         f"Priority fixes: {readiness.priority_fixes}\n"
         f"Failed checklist items: {[item.name for item in failed_items]}\n\n"
-        "Return mentor feedback for a student preparing this project for SDE intern applications. "
-        "Resume bullets should be truthful, action-oriented, and not overclaim impact."
+        "For mentor_summary: write exactly 3 sentences.\n"
+        'Sentence 1: Start with "Strong project", "Borderline project", or "Toy project" '
+        "followed by the single most important reason why.\n"
+        "Sentence 2: What an interviewer's first impression is when they open this repo.\n"
+        "Sentence 3: The one thing most likely to go wrong in an interview conversation about this project.\n"
+        "Be direct and honest. Do not hedge.\n\n"
+        "For resume_bullets: truthful, action-oriented, do not overclaim impact.\n"
+        "Return mentor feedback for a student preparing this project for SDE intern applications."
     )
 
 
@@ -139,18 +181,47 @@ def _build_summary(
     analysis: RepositoryAnalysis,
     readiness: ResumeReadiness,
 ) -> str:
+    # Sentence 1: verdict
     if readiness.score >= 85:
-        guidance = "It is close to something you can confidently discuss in an internship interview."
+        verdict = (
+            "Strong project — it covers documentation, testing, and engineering hygiene "
+            "at a level most intern candidates skip."
+        )
     elif readiness.score >= 65:
-        guidance = "It has a solid base, but a few project-packaging improvements would make it stronger."
+        top_fix = readiness.priority_fixes[0].rstrip(".").lower() if readiness.priority_fixes else "missing signals"
+        verdict = f"Borderline project — the foundations are there but {top_fix} will draw an interviewer's attention."
     else:
-        guidance = "It needs clearer documentation and engineering hygiene before it should lead your resume."
+        verdict = (
+            "Toy project at this stage — it lacks the documentation, tests, and structure "
+            "an interviewer expects to see."
+        )
 
-    return (
-        f"{project_name} is currently rated {readiness.status} ({readiness.score}/100). "
-        f"The repository is primarily {primary_language} with {analysis.total_files} files and "
-        f"{len(analysis.risks)} review signal(s). {guidance}"
-    )
+    # Sentence 2: interviewer reaction based on key signals
+    strengths = []
+    if analysis.has_tests:
+        strengths.append("automated tests")
+    if analysis.has_ci_config:
+        strengths.append("CI configuration")
+    if analysis.has_frontend_backend_structure:
+        strengths.append("full-stack structure")
+
+    if strengths:
+        reaction = f"An interviewer will notice the {', '.join(strengths)} and take the project seriously."
+    else:
+        reaction = "An interviewer will immediately ask about testing and production readiness."
+
+    # Sentence 3: main risk
+    ready_phrase = "Project looks ready for a resume review pass."
+    if readiness.priority_fixes and readiness.priority_fixes[0] != ready_phrase:
+        top_fix = readiness.priority_fixes[0].rstrip(".")
+        risk = f"The main risk: {top_fix.lower()} — address this before your first technical screen."
+    else:
+        risk = (
+            f"The main risk: be ready to explain every design decision in {project_name} "
+            "without hesitation, since interviewers will probe the details."
+        )
+
+    return f"{verdict} {reaction} {risk}"
 
 
 def _build_resume_bullets(
