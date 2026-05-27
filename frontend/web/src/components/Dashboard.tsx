@@ -35,7 +35,7 @@ export function Dashboard({
     URL.revokeObjectURL(url)
   }
 
-  const mentorSnippet = result.mentor_feedback.mentor_summary.split(/\.\s/)[0] + '.'
+  const mentorSnippet = result.mentor_feedback.mentor_summary
 
   return (
     <div>
