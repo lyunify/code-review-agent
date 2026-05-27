@@ -8,7 +8,7 @@ from app.models.schemas import GitHubMetadata, MentorFeedback, RepositoryAnalysi
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_OPENAI_MODEL = "gpt-5.4-mini"
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
 
 def generate_mentor_feedback(
@@ -196,7 +196,7 @@ def _build_summary(
             "an interviewer expects to see."
         )
 
-    # Sentence 2: interviewer reaction based on key signals
+    # Sentence 2: interviewer first impression — based on what IS present, not just what's missing
     strengths = []
     if analysis.has_tests:
         strengths.append("automated tests")
@@ -207,8 +207,12 @@ def _build_summary(
 
     if strengths:
         reaction = f"An interviewer will notice the {', '.join(strengths)} and take the project seriously."
+    elif analysis.has_readme and analysis.readme_has_project_purpose:
+        reaction = "An interviewer will appreciate the README but will immediately probe what happens if they try to run the project — make sure setup instructions are airtight."
+    elif len(analysis.languages) >= 3:
+        reaction = f"The use of {len(analysis.languages)} languages signals ambition, but without tests an interviewer will question whether the core workflow actually runs end-to-end."
     else:
-        reaction = "An interviewer will immediately ask about testing and production readiness."
+        reaction = "An interviewer's first question will be: can I clone this and run it in under five minutes?"
 
     # Sentence 3: main risk
     ready_phrase = "Project looks ready for a resume review pass."
