@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck, ShieldCheck } from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
-import type { AnalyzeResponse, ArchitectureEdge, ProjectIntelligence, StackItem } from '../types'
+import type { AnalyzeResponse, ArchitectureEdge, ArchitectureNode, ProjectIntelligence, StackEvidence, StackItem } from '../types'
 import type { Tab } from '../uiTypes'
 import { Eyebrow, ScoreGauge, scoreBand, scoreGrade } from './Shared'
 
@@ -172,31 +172,65 @@ const EMPTY_INTELLIGENCE: ProjectIntelligence = {
   architecture: { summary: 'No architecture inference available for this scan.', nodes: [], edges: [], mermaid: '' },
 }
 
-const STACK_ORDER = ['Frontend', 'Backend', 'Database', 'Data/Queue', 'Infrastructure', 'Quality/CI', 'AI/External API']
+const STACK_LAYERS: Array<{ category: string; label: string; note: string }> = [
+  { category: 'Frontend', label: 'Client Layer', note: 'User-facing interface and browser runtime.' },
+  { category: 'Backend', label: 'API Layer', note: 'Request handling, validation, and business logic.' },
+  { category: 'Database', label: 'Data Layer', note: 'Persistence, schema, and stored state.' },
+  { category: 'Data/Queue', label: 'Async Layer', note: 'Queues, cache, and background processing.' },
+  { category: 'Infrastructure', label: 'Runtime Layer', note: 'Local orchestration and deployment shape.' },
+  { category: 'Quality/CI', label: 'Quality Layer', note: 'Test, lint, type, and CI signals.' },
+  { category: 'AI/External API', label: 'Integration Layer', note: 'External services used by the workflow.' },
+]
+
+const FLOW_LABELS: Record<string, string> = {
+  user: 'User',
+  frontend: 'Frontend',
+  api: 'API',
+  database: 'Database',
+  queue: 'Queue',
+  worker: 'Worker',
+  external: 'External API',
+}
+
+const FLOW_SEQUENCE = ['user', 'frontend', 'api', 'database']
+const ASYNC_SEQUENCE = ['api', 'queue', 'worker', 'external']
 
 function StackMap({ intelligence }: { intelligence: ProjectIntelligence }) {
-  const groups = STACK_ORDER.map((category) => ({
-    category,
-    items: intelligence.stack.filter((item) => item.category === category),
+  const groups = STACK_LAYERS.map((layer) => ({
+    ...layer,
+    items: intelligence.stack.filter((item) => item.category === layer.category),
   })).filter((group) => group.items.length > 0)
+  const totalEvidence = intelligence.stack.reduce((sum, item) => sum + item.evidence.length, 0)
 
   return (
     <div className="card b-tile b-stack">
-      <div className="panel-heading">
-        <PackageCheck size={18} />
-        <h3>Stack Map</h3>
+      <div className="intelligence-head">
+        <div className="panel-heading">
+          <PackageCheck size={18} />
+          <h3>System Stack</h3>
+        </div>
+        <span className="evidence-pill">
+          <ShieldCheck size={13} />
+          {totalEvidence} evidence points
+        </span>
       </div>
       {groups.length === 0 ? (
         <p className="intelligence-empty">No stack evidence found yet.</p>
       ) : (
-        <div className="stack-groups">
+        <div className="stack-layers">
           {groups.map((group) => (
-            <section className="stack-group" key={group.category}>
-              <span className="stack-category">{group.category}</span>
-              <div className="stack-list">
-                {group.items.slice(0, 5).map((item) => (
-                  <StackChip item={item} key={`${item.category}-${item.name}`} />
-                ))}
+            <section className="stack-layer" key={group.category}>
+              <div className="stack-layer-label">
+                <span>{group.label}</span>
+                <small>{group.note}</small>
+              </div>
+              <div className="stack-layer-body">
+                <div className="tech-chip-row">
+                  {group.items.slice(0, 7).map((item) => (
+                    <TechChip item={item} key={`${item.category}-${item.name}`} />
+                  ))}
+                </div>
+                <EvidenceLine items={group.items} />
               </div>
             </section>
           ))}
@@ -206,61 +240,118 @@ function StackMap({ intelligence }: { intelligence: ProjectIntelligence }) {
   )
 }
 
-function StackChip({ item }: { item: StackItem }) {
+function TechChip({ item }: { item: StackItem }) {
   const primaryEvidence = item.evidence[0]
   return (
-    <article className="stack-chip">
-      <div>
-        <strong>{item.name}</strong>
-        <span>{item.description}</span>
-      </div>
-      <small title={primaryEvidence ? `${primaryEvidence.path}: ${primaryEvidence.reason}` : undefined}>
-        {item.confidence} · {primaryEvidence?.path ?? 'static scan'}
-      </small>
-    </article>
+    <span className={`tech-chip confidence-${item.confidence}`} title={`${item.description}${primaryEvidence ? ` Evidence: ${primaryEvidence.path}` : ''}`}>
+      {item.name}
+    </span>
+  )
+}
+
+function EvidenceLine({ items }: { items: StackItem[] }) {
+  const evidence = items.flatMap((item) => item.evidence.map((entry) => ({ ...entry, name: item.name }))).slice(0, 3)
+  if (evidence.length === 0) return <small className="stack-evidence">Evidence: static scan</small>
+
+  return (
+    <small className="stack-evidence">
+      Evidence:{' '}
+      {evidence.map((entry, index) => (
+        <span key={`${entry.name}-${entry.path}-${entry.reason}`} title={`${entry.name}: ${entry.reason}`}>
+          {index > 0 ? ', ' : ''}
+          {entry.path}
+        </span>
+      ))}
+    </small>
   )
 }
 
 function ArchitectureMap({ intelligence }: { intelligence: ProjectIntelligence }) {
   const architecture = intelligence.architecture
-  const visibleEdges = architecture.edges.slice(0, 6)
+  const mainNodes = orderedNodes(architecture.nodes, FLOW_SEQUENCE)
+  const asyncNodes = orderedNodes(architecture.nodes, ASYNC_SEQUENCE)
 
   return (
     <div className="card b-tile b-flow">
-      <div className="panel-heading">
-        <Network size={18} />
-        <h3>Architecture Flow</h3>
+      <div className="intelligence-head">
+        <div className="panel-heading">
+          <Network size={18} />
+          <h3>Architecture Flow</h3>
+        </div>
+        <span className="evidence-pill">{architecture.edges.length} inferred links</span>
       </div>
       <p className="flow-summary">{architecture.summary}</p>
-      {visibleEdges.length === 0 ? (
+      {architecture.edges.length === 0 ? (
         <p className="intelligence-empty">No flow edges inferred yet.</p>
       ) : (
-        <>
-          <div className="flow-lane">
-            {visibleEdges.map((edge) => (
-              <FlowEdge edge={edge} key={`${edge.source}-${edge.target}-${edge.label}`} />
+        <div className="architecture-board">
+          <div className="flow-track">
+            {mainNodes.map((node, index) => (
+              <FlowNode
+                key={node.id}
+                node={node}
+                nextEdge={findEdge(architecture.edges, node.id, mainNodes[index + 1]?.id)}
+              />
             ))}
           </div>
-          <details className="mermaid-box">
-            <summary>Mermaid source</summary>
-            <pre>{architecture.mermaid}</pre>
-          </details>
-        </>
+          {asyncNodes.length > 2 ? (
+            <div className="async-track">
+              <span className="branch-label">Async processing branch</span>
+              <div className="flow-track compact">
+                {asyncNodes.map((node, index) => (
+                  <FlowNode
+                    key={`async-${node.id}`}
+                    node={node}
+                    nextEdge={findEdge(architecture.edges, node.id, asyncNodes[index + 1]?.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="flow-evidence">
+            {architecture.edges.slice(0, 4).map((edge) => (
+              <FlowEvidence edge={edge} key={`${edge.source}-${edge.target}-${edge.label}`} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
-function FlowEdge({ edge }: { edge: ArchitectureEdge }) {
-  const evidence = edge.evidence[0]
+function orderedNodes(nodes: ArchitectureNode[], order: string[]) {
+  return order.map((id) => nodes.find((node) => node.id === id)).filter((node): node is ArchitectureNode => Boolean(node))
+}
+
+function findEdge(edges: ArchitectureEdge[], source: string, target?: string) {
+  if (!target) return undefined
+  return edges.find((edge) => edge.source === source && edge.target === target)
+}
+
+function FlowNode({ node, nextEdge }: { node: ArchitectureNode; nextEdge?: ArchitectureEdge }) {
   return (
-    <div className="flow-edge">
-      <span className="flow-node">{edge.source}</span>
-      <span className="flow-arrow">{edge.label}</span>
-      <span className="flow-node">{edge.target}</span>
-      <small title={evidence ? evidence.reason : undefined}>{evidence?.path ?? edge.confidence}</small>
+    <div className="flow-unit">
+      <div className={`flow-card kind-${node.kind}`}>
+        <span>{FLOW_LABELS[node.id] ?? node.label}</span>
+        <small>{node.confidence} confidence</small>
+      </div>
+      {nextEdge ? <span className="flow-connector">{nextEdge.label}</span> : null}
     </div>
   )
+}
+
+function FlowEvidence({ edge }: { edge: ArchitectureEdge }) {
+  const evidence = edge.evidence[0]
+  return (
+    <span title={evidence ? evidence.reason : undefined}>
+      {edge.source} {'->'} {edge.target}: {evidencePath(evidence)}
+    </span>
+  )
+}
+
+function evidencePath(evidence?: StackEvidence) {
+  if (!evidence) return 'static scan'
+  return evidence.path.length > 32 ? `${evidence.path.slice(0, 29)}...` : evidence.path
 }
 
 function MetadataItem({ label, value }: { label: string; value: string }) {
