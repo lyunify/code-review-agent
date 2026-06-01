@@ -140,6 +140,11 @@ def _run_analysis(
     user_id = job_record.user_id if job_record else None
     job.status = "running"
     history_store.mark_job_running(job_id, progress="Checking repository size...")
+    history_store.record_job_event(
+        job_id=job_id,
+        event_type="running",
+        message="Checking repository size...",
+    )
     try:
         _set_progress(job, history_store, "Checking repository size...")
         size_kb = get_repo_size_kb(repo_url)
@@ -197,6 +202,12 @@ def _run_analysis(
         job.status = "done"
         job.progress = "Done"
         history_store.mark_job_done(job_id, result_history_id=saved.id)
+        history_store.record_job_event(
+            job_id=job_id,
+            event_type="done",
+            message="Analysis complete",
+            metadata={"result_history_id": saved.id, "score": readiness.score},
+        )
         logger.info(
             "Job complete: job_id=%s repo=%s score=%d",
             job_id,
@@ -209,6 +220,12 @@ def _run_analysis(
         job.status = "failed"
         job.progress = "Failed"
         history_store.mark_job_failed(job_id, error=str(exc))
+        history_store.record_job_event(
+            job_id=job_id,
+            event_type="failed",
+            message="Analysis failed",
+            metadata={"error": str(exc)},
+        )
         logger.error("Job failed: job_id=%s repo=%s error=%s", job_id, repo_url, exc)
 
 
@@ -229,3 +246,9 @@ def _set_progress(
 ) -> None:
     job.progress = progress
     history_store.update_job_progress(job.job_id, progress=progress)
+    history_store.record_job_event(
+        job_id=job.job_id,
+        event_type="progress",
+        message=progress,
+        metadata={"progress": progress},
+    )

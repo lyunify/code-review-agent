@@ -317,6 +317,42 @@ def test_job_status_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> No
     assert events[0].metadata["job_id"] == job_id
 
 
+def test_job_events_endpoint_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> None:
+    db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    monkeypatch.setattr("app.api.routes.history_store", db_store)
+    monkeypatch.setattr("app.api.routes.start_analysis_thread", lambda **kwargs: None)
+    alice = TestClient(app)
+    bob = TestClient(app)
+    alice.post("/api/auth/dev-login", json={"username": "alice"})
+    bob.post("/api/auth/dev-login", json={"username": "bob"})
+
+    job_id = alice.post(
+        "/api/analyze", json={"repo_url": "https://github.com/example/demo"}
+    ).json()["job_id"]
+    db_store.record_job_event(job_id=job_id, event_type="running", message="Checking size")
+
+    response = alice.get(f"/api/jobs/{job_id}/events")
+    assert response.status_code == 200
+    payload = response.json()
+    assert [event["event_type"] for event in payload["events"]] == ["queued", "running"]
+    assert payload["events"][0]["sequence"] == 1
+
+    assert bob.get(f"/api/jobs/{job_id}/events").status_code == 404
+
+
+def test_job_events_endpoint_returns_404_for_unknown_job(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.history_store",
+        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+    )
+    client = TestClient(app)
+
+    response = client.get("/api/jobs/not-a-job/events")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Job not found"
+
+
 def test_job_fails_when_repo_too_large(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("app.jobs.get_repo_size_kb", lambda repo_url: 200_000)
     monkeypatch.setattr(

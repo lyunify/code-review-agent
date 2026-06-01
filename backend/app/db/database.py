@@ -4,7 +4,9 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import create_engine, desc, select, text
+from sqlalchemy import create_engine, desc, inspect, select, text
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import DATABASE_URL
@@ -13,6 +15,7 @@ from app.db.models import (
     AnalysisJobRow,
     AuditEventRow,
     Base,
+    JobEventRow,
     SessionRow,
     UserRow,
 )
@@ -70,13 +73,62 @@ class AuditEventRecord:
     created_at: str
 
 
+@dataclass(frozen=True)
+class JobEventRecord:
+    id: int
+    job_id: str
+    sequence: int
+    event_type: str
+    message: str
+    metadata: dict[str, object]
+    created_at: str
+
+
 class AnalysisHistoryStore:
     def __init__(self, db_url: str = DATABASE_URL) -> None:
         connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
         self._engine = create_engine(db_url, connect_args=connect_args)
         Base.metadata.create_all(self._engine)
+        self._repair_legacy_schema()
         self._Session = sessionmaker(self._engine)
         logger.info("Database initialized: %s", db_url.split("@")[-1])
+
+    def _repair_legacy_schema(self) -> None:
+        inspector = inspect(self._engine)
+        with self._engine.begin() as connection:
+            self._ensure_columns(
+                connection=connection,
+                inspector=inspector,
+                table_name="analysis_history",
+                columns=[
+                    ("user_id", "INTEGER", True),
+                    ("readiness_json", "TEXT", True),
+                    ("mentor_feedback_json", "TEXT", True),
+                    ("action_plan_json", "TEXT", True),
+                    ("github_metadata_json", "TEXT", True),
+                ],
+            )
+            self._ensure_columns(
+                connection=connection,
+                inspector=inspector,
+                table_name="analysis_jobs",
+                columns=[("user_id", "INTEGER", True)],
+            )
+
+    def _ensure_columns(
+        self,
+        connection: Connection,
+        inspector: Inspector,
+        table_name: str,
+        columns: list[tuple[str, str, bool]],
+    ) -> None:
+        existing = {column["name"] for column in inspector.get_columns(table_name)}
+        for name, column_type, is_nullable in columns:
+            if name not in existing:
+                nullable = "" if is_nullable else " NOT NULL"
+                connection.execute(
+                    text(f"ALTER TABLE {table_name} ADD COLUMN {name} {column_type}{nullable}")
+                )
 
     def create_or_get_dev_user(self, username: str) -> UserRecord:
         normalized = username.strip().lower()
@@ -184,8 +236,58 @@ class AnalysisHistoryStore:
             session.commit()
             session.refresh(row)
 
+        self.record_job_event(
+            job_id=row.id,
+            event_type="queued",
+            message="Job queued",
+            metadata={"repo_url": repo_url},
+        )
         logger.info("Job saved: job_id=%s repo=%s", row.id, repo_url)
         return _job_record_from_row(row)
+
+    def record_job_event(
+        self,
+        job_id: str,
+        event_type: str,
+        message: str,
+        metadata: dict[str, object] | None = None,
+    ) -> JobEventRecord:
+        with self._Session() as session:
+            previous_sequence = (
+                session.execute(
+                    select(JobEventRow.sequence)
+                    .where(JobEventRow.job_id == job_id)
+                    .order_by(desc(JobEventRow.sequence))
+                    .limit(1)
+                )
+                .scalars()
+                .first()
+            )
+            row = JobEventRow(
+                job_id=job_id,
+                sequence=(previous_sequence or 0) + 1,
+                event_type=event_type,
+                message=message,
+                metadata_json=json.dumps(metadata or {}, sort_keys=True),
+                created_at=datetime.now(UTC).isoformat(),
+            )
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+            return _job_event_record_from_row(row)
+
+    def list_job_events(self, job_id: str) -> list[JobEventRecord]:
+        with self._Session() as session:
+            rows = (
+                session.execute(
+                    select(JobEventRow)
+                    .where(JobEventRow.job_id == job_id)
+                    .order_by(JobEventRow.sequence)
+                )
+                .scalars()
+                .all()
+            )
+        return [_job_event_record_from_row(row) for row in rows]
 
     def check_database(self) -> bool:
         with self._Session() as session:
@@ -394,6 +496,18 @@ def _audit_event_record_from_row(row: AuditEventRow) -> AuditEventRecord:
         event_type=row.event_type,
         user_id=row.user_id,
         actor=row.actor,
+        metadata=dict(json.loads(row.metadata_json)),
+        created_at=row.created_at,
+    )
+
+
+def _job_event_record_from_row(row: JobEventRow) -> JobEventRecord:
+    return JobEventRecord(
+        id=row.id,
+        job_id=row.job_id,
+        sequence=row.sequence,
+        event_type=row.event_type,
+        message=row.message,
         metadata=dict(json.loads(row.metadata_json)),
         created_at=row.created_at,
     )

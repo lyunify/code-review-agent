@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 
 from alembic import command
 from alembic.config import Config
@@ -143,6 +143,65 @@ def test_job_store_persists_failed_status(tmp_path: Path) -> None:
     assert fetched.error == "Repository is too large"
 
 
+def test_store_repairs_legacy_user_columns(tmp_path: Path) -> None:
+    db_url = f"sqlite:///{tmp_path}/legacy.db"
+    engine = create_engine(db_url)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE analysis_history ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "repo_url VARCHAR NOT NULL, "
+                "created_at VARCHAR NOT NULL, "
+                "total_files INTEGER NOT NULL, "
+                "total_directories INTEGER NOT NULL, "
+                "language_count INTEGER NOT NULL, "
+                "risk_count INTEGER NOT NULL, "
+                "summary TEXT NOT NULL, "
+                "analysis_json TEXT NOT NULL, "
+                "report_json TEXT NOT NULL)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE TABLE analysis_jobs ("
+                "id VARCHAR PRIMARY KEY, "
+                "repo_url VARCHAR NOT NULL, "
+                "status VARCHAR NOT NULL, "
+                "progress VARCHAR NOT NULL, "
+                "result_history_id INTEGER, "
+                "error TEXT, "
+                "created_at VARCHAR NOT NULL, "
+                "updated_at VARCHAR NOT NULL)"
+            )
+        )
+
+    AnalysisHistoryStore(db_url)
+
+    history_columns = {column["name"] for column in inspect(create_engine(db_url)).get_columns("analysis_history")}
+    job_columns = {column["name"] for column in inspect(create_engine(db_url)).get_columns("analysis_jobs")}
+    assert "user_id" in history_columns
+    assert "github_metadata_json" in history_columns
+    assert "user_id" in job_columns
+
+
+def test_job_events_are_persisted_in_timeline_order(tmp_path: Path) -> None:
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    job = store.create_job("https://github.com/example/demo")
+
+    running = store.record_job_event(
+        job_id=job.job_id,
+        event_type="running",
+        message="Checking repository size...",
+        metadata={"progress": "Checking repository size..."},
+    )
+    events = store.list_job_events(job.job_id)
+
+    assert running.sequence == 2
+    assert [event.event_type for event in events] == ["queued", "running"]
+    assert events[1].metadata == {"progress": "Checking repository size..."}
+
+
 def test_user_sessions_and_history_are_user_scoped(tmp_path: Path) -> None:
     store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
     alice = store.create_or_get_dev_user("alice")
@@ -238,6 +297,7 @@ def test_alembic_initial_schema_creates_tables(tmp_path: Path) -> None:
         "users",
         "sessions",
         "audit_events",
+        "job_events",
         "alembic_version",
     }.issubset(tables)
     history_columns = {column["name"] for column in inspect(engine).get_columns("analysis_history")}

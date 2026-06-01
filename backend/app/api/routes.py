@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.db.database import AnalysisHistoryStore, UserRecord
+from app.db.database import AnalysisHistoryStore, AnalysisJobRecord, UserRecord
 from app.jobs import create_job, get_job, start_analysis_thread
 from app.models.schemas import (
     AnalysisHistoryDetail,
@@ -13,6 +13,8 @@ from app.models.schemas import (
     CurrentUserResponse,
     DevLoginRequest,
     JobCreatedResponse,
+    JobEvent,
+    JobEventsResponse,
     JobStatusResponse,
 )
 from app.services.rate_limiter import RedisRateLimiter
@@ -143,6 +145,37 @@ def analyze_repo(request: AnalyzeRequest, http_request: Request) -> JobCreatedRe
 
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
 def get_job_status(job_id: str, request: Request) -> JobStatusResponse:
+    _get_owned_job_record_or_404(job_id=job_id, request=request)
+    job = get_job(job_id, history_store=history_store)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobStatusResponse(
+        job_id=job.job_id,
+        status=job.status,
+        progress=job.progress,
+        result=job.result,
+        error=job.error,
+    )
+
+
+@router.get("/jobs/{job_id}/events", response_model=JobEventsResponse)
+def get_job_events(job_id: str, request: Request) -> JobEventsResponse:
+    _get_owned_job_record_or_404(job_id=job_id, request=request)
+    return JobEventsResponse(
+        events=[
+            JobEvent(
+                sequence=event.sequence,
+                event_type=event.event_type,
+                message=event.message,
+                metadata=event.metadata,
+                created_at=event.created_at,
+            )
+            for event in history_store.list_job_events(job_id)
+        ]
+    )
+
+
+def _get_owned_job_record_or_404(job_id: str, request: Request) -> AnalysisJobRecord:
     record = history_store.get_job(job_id)
     current_user_id = _current_user_id(request)
     if record is None or record.user_id != current_user_id:
@@ -154,17 +187,7 @@ def get_job_status(job_id: str, request: Request) -> JobStatusResponse:
                 metadata={"job_id": job_id, "owner_user_id": record.user_id},
             )
         raise HTTPException(status_code=404, detail="Job not found")
-
-    job = get_job(job_id, history_store=history_store)
-    if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return JobStatusResponse(
-        job_id=job.job_id,
-        status=job.status,
-        progress=job.progress,
-        result=job.result,
-        error=job.error,
-    )
+    return record
 
 
 def _is_supported_github_url(repo_url: str) -> bool:

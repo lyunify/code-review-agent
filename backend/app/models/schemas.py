@@ -170,3 +170,15 @@ class JobStatusResponse(BaseModel):
     progress: str
     result: AnalyzeResponse | None = None
     error: str | None = None
+
+
+class JobEvent(BaseModel):
+    sequence: int
+    event_type: str
+    message: str
+    metadata: dict[str, object]
+    created_at: str
+
+
+class JobEventsResponse(BaseModel):
+    events: list[JobEvent]
