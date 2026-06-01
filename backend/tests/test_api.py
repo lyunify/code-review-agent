@@ -87,6 +87,27 @@ def test_health_live_returns_ok() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_root_endpoint_lists_backend_entrypoints() -> None:
+    client = TestClient(app)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "service": "Repo Ready API",
+        "docs": "/docs",
+        "health": {
+            "live": "/health/live",
+            "ready": "/health/ready",
+        },
+        "api": {
+            "analyze": "/api/analyze",
+            "jobs": "/api/jobs/{job_id}",
+            "history": "/api/history",
+        },
+    }
+
+
 def test_health_ready_checks_database(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         "app.main.history_store",
