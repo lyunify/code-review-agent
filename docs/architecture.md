@@ -1,57 +1,76 @@
 # Architecture
 
-`code-review-agent` is split into a Python backend, a polished React frontend, a background worker, and a legacy Streamlit quick demo.
+Repo Ready is a full-stack application with a React frontend, FastAPI API, Redis/RQ worker, Postgres database, and Redis-backed rate limiting/queueing.
 
-## Backend
+## Runtime View
 
-The FastAPI backend accepts analysis requests, persists job state, and returns a `job_id` immediately. In simple local mode it can still run work in a background thread; in production-style mode it enqueues analysis jobs through Redis/RQ so long-running repository scans are handled outside the request path.
-
-The worker clones public repositories, runs static analysis, enriches results with GitHub API metadata, calculates resume readiness, saves a compact history record, and updates job status. The API layer stays thin; core behavior lives in services so it can be tested without HTTP.
-
-Postgres is the production-style database target, while SQLite remains convenient for local tests and lightweight demos. Alembic owns schema migrations for the `analysis_history` and `analysis_jobs` tables.
-
-## Frontend
-
-The React frontend is the primary portfolio demo. It calls the backend API, then renders resume readiness, AI mentor feedback, checklist results, technical scan details, and history. The Streamlit frontend remains available as a lightweight local fallback.
-
-## Production Backend Runtime
-
-```text
-React + TypeScript
-        |
-        v
-FastAPI API
-        |
-        |-- Postgres: job state and analysis history
-        |-- Redis/RQ: analysis queue
-        |
-        v
-Worker process
-        |
-        |-- repository clone + static analysis
-        |-- GitHub REST API metadata
-        |-- OpenAI mentor feedback with fallback logic
+```mermaid
+flowchart LR
+  FE["React + TypeScript frontend"] --> API["FastAPI API"]
+  API --> AUTH["Session auth"]
+  API --> LIMIT["Redis rate limiter"]
+  API --> DB[("Postgres")]
+  API --> QUEUE["Redis/RQ queue"]
+  QUEUE --> WORKER["Worker process"]
+  WORKER --> CLONE["Temporary repository clone"]
+  WORKER --> ANALYSIS["Static analysis services"]
+  WORKER --> GITHUB["GitHub REST API"]
+  WORKER --> AI["OpenAI mentor feedback\nwith fallback"]
+  WORKER --> DB
+  API --> EVENTS["Audit events + job events"]
+  EVENTS --> DB
 ```
 
-Docker Compose provides `api`, `worker`, `postgres`, and `redis` services. The API exposes `/health/live` for process liveness and `/health/ready` for dependency readiness.
+## Request Flow
 
-## Service Boundaries
+1. The frontend submits a public GitHub URL to `POST /api/analyze`.
+2. The API validates that the URL points to `github.com`.
+3. The API resolves the current user from the HTTP-only session cookie, if present.
+4. Redis-backed rate limiting checks the user or anonymous IP actor.
+5. The API creates a persistent job row and records `analysis_started`.
+6. Redis/RQ receives the job for worker execution.
+7. The worker records job timeline events while cloning, analyzing, enriching, scoring, and generating mentor feedback.
+8. The worker saves the analysis result and marks the job `done` or `failed`.
+9. The frontend polls `GET /api/jobs/{job_id}` and can read `GET /api/jobs/{job_id}/events`.
 
-- `repo_loader`: gets source code onto disk.
-- `analyzer`: inspects files and computes metrics.
-- `github_metadata`: fetches public repository metadata such as description, topics, license, homepage, and fork status.
-- `readiness`: calculates a resume readiness score, checklist, and priority fixes using documentation, testing, dependency, structure, and risk-density signals.
-- `mentor_agent`: generates OpenAI-backed mentor feedback when an API key is configured, with a rule-based fallback for local demos and tests.
-- `report_generator`: turns metrics into user-facing interpretation.
-- `db`: stores analysis history and persistent job state.
-- `jobs`: coordinates job creation, status updates, thread-mode execution, and Redis queue handoff.
-- `worker`: starts an RQ worker that processes queued analysis jobs.
-- `routes`: handles HTTP request and response flow.
+## Backend Components
 
-## Interview Talking Points
+- `routes`: HTTP request validation, session lookup, authorization, rate limiting, and response shaping.
+- `jobs`: job creation, queue handoff, worker orchestration, status updates, and timeline event recording.
+- `worker`: starts an RQ worker connected to Redis.
+- `db`: SQLAlchemy models and persistence methods for users, sessions, jobs, job events, audit events, and analysis history.
+- `repo_loader`: clones public GitHub repositories into temporary workspaces.
+- `analyzer`: inspects files, directories, languages, docs, tests, dependencies, CI, deployment config, and risk signals.
+- `github_metadata`: enriches reports with public GitHub repository metadata.
+- `readiness`: calculates deterministic resume readiness scores and checklist items.
+- `action_plan`: turns missing signals into prioritized improvement tasks.
+- `mentor_agent`: generates resume bullets, interview questions, and next steps through OpenAI or a deterministic fallback.
 
-- The API does not block on repository scans; it returns a job id and lets the frontend poll status.
-- Job state is persisted, which is a stronger backend signal than keeping all status only in process memory.
-- Redis/RQ separates request handling from long-running work and creates a path to horizontal worker scaling.
-- Alembic migrations make schema evolution explicit.
-- Liveness and readiness endpoints show deployment awareness: the process can be alive even when a dependency is unavailable.
+## Data Model
+
+- `users`: local development user records.
+- `sessions`: HTTP-only cookie session backing store.
+- `analysis_jobs`: persistent async job state.
+- `job_events`: ordered progress timeline for each job.
+- `analysis_history`: saved final reports.
+- `audit_events`: login/logout, rejected analysis requests, started analyses, and denied job views.
+
+## Production Signals
+
+- Long-running work is outside the API request path.
+- Job status and progress are persisted, not only stored in memory.
+- Access to history, job status, and job events is scoped by session user.
+- Expensive analysis requests are protected by Redis rate limiting.
+- Operational health is split into liveness and dependency readiness.
+- Schema changes are explicit through Alembic migrations.
+- AI feedback is optional; the deterministic fallback keeps demos and tests stable.
+
+## Local Stack
+
+Docker Compose runs:
+
+- `frontend`: React app served through Nginx.
+- `api`: FastAPI service running migrations before startup.
+- `worker`: RQ worker running migrations before startup.
+- `postgres`: persistent application database.
+- `redis`: queue backend and rate-limit counter store.
