@@ -16,7 +16,7 @@ export function generateMarkdownReport(result: AnalyzeResponse): string {
     )
     .join('\n')
   const resumeBullets = result.mentor_feedback.resume_bullets.map((bullet) => `- ${bullet}`).join('\n')
-  const interviewQuestions = result.mentor_feedback.interview_questions.map((question, index) => `${index + 1}. ${question}`).join('\n')
+  const interviewQuestions = result.mentor_feedback.interview_questions.map((question, index) => `${index + 1}. ${question.question}`).join('\n')
   const risks = result.analysis.risks.length
     ? result.analysis.risks.map((risk) => `- ${risk.severity}: ${risk.message}${risk.path ? ` (${risk.path})` : ''}`).join('\n')
     : '- No risk signals found.'

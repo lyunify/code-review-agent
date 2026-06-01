@@ -56,7 +56,15 @@ const result: AnalyzeResponse = {
   mentor_feedback: {
     mentor_summary: 'This project is close to resume-ready.',
     resume_bullets: ['Built a full-stack repo reviewer.'],
-    interview_questions: ['How would you scale this?'],
+    interview_questions: [
+      {
+        question: 'How would you scale this?',
+        situation: 'I built a repository review app.',
+        task: 'I needed to support longer scans.',
+        action: 'I moved work into background jobs.',
+        result: 'The API can return quickly while work continues.',
+      },
+    ],
     next_steps: ['Add tests.'],
   },
   action_plan: {
@@ -79,6 +87,8 @@ describe('generateMarkdownReport', () => {
     expect(report).toContain('# Repository Readiness Report')
     expect(report).toContain('**Score:** 82/100')
     expect(report).toContain('This project is close to resume-ready.')
+    expect(report).toContain('How would you scale this?')
+    expect(report).not.toContain('[object Object]')
     expect(report).toContain('## Action Plan')
     expect(report).toContain('Add automated tests')
     expect(report).toContain('## GitHub Profile Signals')

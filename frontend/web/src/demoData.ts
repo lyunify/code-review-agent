@@ -170,9 +170,27 @@ export function getDemoAnalysisResult(): AnalyzeResponse {
         'Integrated AI-assisted mentor feedback to generate prioritized action plans, resume bullets, and interview preparation prompts.',
       ],
       interview_questions: [
-        'How does the readiness score balance deterministic rules with AI-generated feedback?',
-        'How would you scale repository analysis for larger projects or multiple concurrent users?',
-        'What tradeoffs did you make between local analysis, saved history, and real-time AI responses?',
+        {
+          question: 'How does the readiness score balance deterministic rules with AI-generated feedback?',
+          situation: 'I built Repo Ready to help students decide whether a GitHub project belongs on a resume.',
+          task: 'I needed feedback that was both explainable and useful for interview preparation.',
+          action: 'I kept the readiness score deterministic and used AI only for mentor-style interpretation.',
+          result: 'The app can give repeatable scores while still producing tailored resume and interview guidance.',
+        },
+        {
+          question: 'How would you scale repository analysis for larger projects or multiple concurrent users?',
+          situation: 'Repository analysis can involve cloning, scanning, and external API calls.',
+          task: 'I needed to keep long-running work out of the request path.',
+          action: 'I separated job status from execution and added a Redis/RQ worker path.',
+          result: 'The backend can enqueue work and let the frontend poll without blocking the API request.',
+        },
+        {
+          question: 'What tradeoffs did you make between local analysis, saved history, and real-time AI responses?',
+          situation: 'The product needs reliable demos even when external AI services are unavailable.',
+          task: 'I needed the core experience to keep working without an API key.',
+          action: 'I made static analysis and scoring deterministic, persisted reports, and added rule-based AI fallback.',
+          result: 'The app stays usable for local demos while still supporting richer AI feedback in production.',
+        },
       ],
       next_steps: [
         'Refactor the largest frontend file into smaller components.',
