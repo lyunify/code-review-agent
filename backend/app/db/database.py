@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import create_engine, desc, select
+from sqlalchemy import create_engine, desc, select, text
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import DATABASE_URL
@@ -61,6 +61,11 @@ class AnalysisHistoryStore:
 
         logger.info("Job saved: job_id=%s repo=%s", row.id, repo_url)
         return _job_record_from_row(row)
+
+    def check_database(self) -> bool:
+        with self._Session() as session:
+            session.execute(text("SELECT 1"))
+        return True
 
     def get_job(self, job_id: str) -> AnalysisJobRecord | None:
         with self._Session() as session:

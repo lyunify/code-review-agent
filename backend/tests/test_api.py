@@ -78,6 +78,33 @@ def test_analyze_returns_job_id_immediately(monkeypatch, tmp_path: Path) -> None
     assert len(payload["job_id"]) == 36  # UUID4
 
 
+def test_health_live_returns_ok() -> None:
+    client = TestClient(app)
+
+    response = client.get("/health/live")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_health_ready_checks_database(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "app.main.history_store",
+        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+    )
+    client = TestClient(app)
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ready",
+        "checks": {
+            "database": "ok",
+        },
+    }
+
+
 def test_job_status_completes_with_full_result(monkeypatch, tmp_path: Path) -> None:
     repo_dir = _make_repo(tmp_path)
     monkeypatch.setattr(
