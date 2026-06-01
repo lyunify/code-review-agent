@@ -17,21 +17,13 @@ import { HistoryDrawer } from './components/HistoryDrawer'
 import { LoadingWorkbench } from './components/LoadingWorkbench'
 import { MentorView } from './components/MentorView'
 import { RubricView } from './components/RubricView'
-import { TopNav } from './components/TopNav'
+import { Sidebar } from './components/Sidebar'
 import { getDemoAnalysisResult } from './demoData'
 import type { AnalyzeResponse, CurrentUser, HistoryRecord } from './types'
 import type { Tab, View } from './uiTypes'
 
 const SAMPLE_REPO_URL = 'https://github.com/lyunify/repo-ready'
-
-const VIEW_LABELS: Record<View, string> = {
-  dashboard: 'Overview',
-  mentor: 'AI Mentor',
-  action: 'Action Plan',
-  rubric: 'Rubric',
-}
-
-const VIEWS: View[] = ['dashboard', 'mentor', 'action', 'rubric']
+const THEME_KEY = 'repo-ready-theme'
 
 function App() {
   const [repoUrl, setRepoUrl] = useState(SAMPLE_REPO_URL)
@@ -45,10 +37,18 @@ function App() {
   const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+  const [theme, setTheme] = useState<string>(
+    () => (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || '',
+  )
 
   useEffect(() => {
     refreshSessionState()
   }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    if (typeof localStorage !== 'undefined') localStorage.setItem(THEME_KEY, theme)
+  }, [theme])
 
   async function refreshSessionState() {
     try {
@@ -128,12 +128,21 @@ function App() {
   }
 
   return (
-    <main className="workspace">
-      <TopNav
+    <div className="app">
+      <div className="aurora" />
+      <div className="grain" />
+
+      <Sidebar
+        result={result}
+        history={history}
+        activeView={activeView}
+        loadingHistoryId={loadingHistoryId}
         currentUser={currentUser}
+        onViewChange={setActiveView}
+        onSelectHistory={handleSelectHistory}
+        onOpenHistory={() => setIsDrawerOpen(true)}
         onDevLogin={() => void handleDevLogin()}
         onLogout={() => void handleLogout()}
-        onHistoryOpen={() => setIsDrawerOpen(true)}
       />
 
       <HistoryDrawer
@@ -144,41 +153,39 @@ function App() {
         onSelectHistory={handleSelectHistory}
       />
 
-      <div className="main-content">
-        <CommandBar
-          repoUrl={repoUrl}
-          isLoading={isLoading}
-          onRepoUrlChange={setRepoUrl}
-          onAnalyze={() => void handleAnalyze()}
-        />
+      <div className="canvas">
+        <div className="canvas-top">
+          <CommandBar
+            repoUrl={repoUrl}
+            isLoading={isLoading}
+            onRepoUrlChange={setRepoUrl}
+            onAnalyze={() => void handleAnalyze()}
+          />
+          <button
+            className="icon-btn"
+            onClick={() => setTheme((t) => (t === 'ivory' ? '' : 'ivory'))}
+            aria-label="Toggle light / dark theme"
+            title={theme === 'ivory' ? 'Switch to dark' : 'Switch to light'}
+          >
+            {theme === 'ivory' ? <MoonIcon /> : <SunIcon />}
+          </button>
+        </div>
 
-        {error && (
-          <div className="error-banner">
-            <AlertTriangle size={18} />
-            <div>
-              <strong>Analysis could not start</strong>
-              <p>{error}</p>
+        <div className="canvas-body">
+          {error && (
+            <div className="error-banner">
+              <AlertTriangle size={18} />
+              <div>
+                <strong>Analysis could not start</strong>
+                <p>{error}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {isLoading ? (
-          <LoadingWorkbench repoUrl={repoUrl} pollCount={pollCount} />
-        ) : result ? (
-          <>
-            <nav className="view-tabs">
-              {VIEWS.map((view) => (
-                <button
-                  key={view}
-                  className={`view-tab${activeView === view ? ' active' : ''}`}
-                  onClick={() => setActiveView(view)}
-                >
-                  {VIEW_LABELS[view]}
-                </button>
-              ))}
-            </nav>
-
-            {activeView === 'dashboard' ? (
+          {isLoading ? (
+            <LoadingWorkbench repoUrl={repoUrl} pollCount={pollCount} />
+          ) : result ? (
+            activeView === 'dashboard' ? (
               <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
             ) : activeView === 'action' ? (
               <ActionPlanView result={result} />
@@ -186,13 +193,30 @@ function App() {
               <RubricView result={result} />
             ) : (
               <MentorView result={result} />
-            )}
-          </>
-        ) : (
-          <EmptyWorkbench history={history} activeView={activeView} onTrySampleRepo={handleTrySampleRepo} />
-        )}
+            )
+          ) : (
+            <EmptyWorkbench history={history} activeView={activeView} onTrySampleRepo={handleTrySampleRepo} />
+          )}
+        </div>
       </div>
-    </main>
+    </div>
+  )
+}
+
+function SunIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
   )
 }
 

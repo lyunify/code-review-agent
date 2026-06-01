@@ -12,31 +12,35 @@ export function LoadingWorkbench({ repoUrl, pollCount = 0 }: { repoUrl: string; 
   const activeStep = Math.min(pollCount, steps.length - 1)
 
   return (
-    <section className="panel">
-      <div>
-        <p className="panel-eyebrow">Analysis pipeline</p>
-        <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginTop: 4 }}>
-          Reviewing {repoUrl.replace('https://github.com/', '')}
-        </p>
+    <section className="panel loading-shell">
+      <div className="loading-orb">
+        <span className="ring" />
+        <span className="ring r2" />
+        <span className="core" />
       </div>
+      <p className="panel-eyebrow">Analysis pipeline</p>
+      <p className="loading-repo">Reviewing {repoUrl.replace('https://github.com/', '')}</p>
       <div className="loading-steps">
-        {steps.map((step, index) => (
-          <div className="loading-step" key={step.label}>
-            <span>
-              {index < activeStep ? (
-                <CheckCircle2 size={17} style={{ color: 'var(--accent)' }} />
-              ) : index === activeStep ? (
-                <Loader2 className="spin" size={17} />
-              ) : (
-                index + 1
-              )}
-            </span>
-            <div>
-              <strong>{step.label}</strong>
-              <p>{step.detail}</p>
+        {steps.map((step, index) => {
+          const state = index < activeStep ? 'is-done' : index === activeStep ? 'is-active' : ''
+          return (
+            <div className={`loading-step ${state}`} key={step.label}>
+              <span>
+                {index < activeStep ? (
+                  <CheckCircle2 size={15} />
+                ) : index === activeStep ? (
+                  <Loader2 className="spin" size={15} />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              <div>
+                <strong>{step.label}</strong>
+                <p>{step.detail}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </section>
   )
