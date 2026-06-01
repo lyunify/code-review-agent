@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from redis import Redis
 
 from app.api.routes import history_store, router
 from app.core import config
@@ -40,22 +41,46 @@ def liveness_check() -> dict[str, str]:
 
 @app.get("/health/ready")
 def readiness_check() -> dict[str, object]:
+    checks = {
+        "database": "ok",
+        "redis": "ok",
+    }
+
     try:
         history_store.check_database()
     except Exception as exc:
+        checks["database"] = "unavailable"
         raise HTTPException(
             status_code=503,
             detail={
                 "status": "not_ready",
-                "checks": {
-                    "database": "unavailable",
-                },
+                "checks": checks,
             },
         ) from exc
 
+    if not check_redis():
+        checks["redis"] = "unavailable"
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "not_ready",
+                "checks": checks,
+            },
+        )
+
     return {
         "status": "ready",
-        "checks": {
-            "database": "ok",
-        },
+        "checks": checks,
     }
+
+
+def check_redis() -> bool:
+    try:
+        Redis.from_url(
+            config.REDIS_URL,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+        ).ping()
+    except Exception:
+        return False
+    return True

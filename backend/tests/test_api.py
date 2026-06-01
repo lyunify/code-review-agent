@@ -92,6 +92,7 @@ def test_health_ready_checks_database(monkeypatch, tmp_path: Path) -> None:
         "app.main.history_store",
         AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
     )
+    monkeypatch.setattr("app.main.check_redis", lambda: True)
     client = TestClient(app)
 
     response = client.get("/health/ready")
@@ -101,6 +102,27 @@ def test_health_ready_checks_database(monkeypatch, tmp_path: Path) -> None:
         "status": "ready",
         "checks": {
             "database": "ok",
+            "redis": "ok",
+        },
+    }
+
+
+def test_health_ready_returns_503_when_redis_is_unavailable(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "app.main.history_store",
+        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+    )
+    monkeypatch.setattr("app.main.check_redis", lambda: False)
+    client = TestClient(app)
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == {
+        "status": "not_ready",
+        "checks": {
+            "database": "ok",
+            "redis": "unavailable",
         },
     }
 
