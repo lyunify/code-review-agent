@@ -162,18 +162,35 @@ source .venv/bin/activate
 alembic upgrade head
 ```
 
-## Run Production-Style Backend Stack
+## Run Full Docker Stack
 
-Docker Compose starts the API, worker, Postgres, and Redis services:
+Docker Compose starts the full production-style local stack: React frontend, FastAPI API, Redis/RQ worker, Postgres, and Redis.
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-The API runs at `http://127.0.0.1:8000`. Useful health endpoints:
+Open the app at `http://127.0.0.1:5173`.
+
+Useful service URLs:
+
+- Frontend app: `http://127.0.0.1:5173`
+- API root: `http://127.0.0.1:8000`
+- API docs: `http://127.0.0.1:8000/docs`
+- API readiness: `http://127.0.0.1:8000/health/ready`
+
+Useful commands:
+
+```bash
+docker compose ps
+docker compose logs -f api worker
+docker compose down
+```
+
+Health endpoints:
 
 - `GET /health/live`: process liveness.
-- `GET /health/ready`: database readiness.
+- `GET /health/ready`: database and Redis readiness.
 
 ## Run React Frontend
 
@@ -211,7 +228,7 @@ cd frontend
 - Analysis jobs are persisted in the database so job status is not only an in-memory API concern.
 - Redis/RQ worker mode separates request handling from long-running repository analysis.
 - Alembic migrations make database schema changes explicit and reviewable.
-- Docker Compose provides a production-style local stack with API, worker, Postgres, and Redis.
+- Docker Compose provides a production-style local stack with frontend, API, worker, Postgres, and Redis.
 - `/health/live` and `/health/ready` separate process liveness from dependency readiness.
 - The readiness score is deterministic so results are explainable and repeatable.
 - GitHub metadata is treated as enrichment data; lookup failures fall back gracefully instead of failing the full analysis.
