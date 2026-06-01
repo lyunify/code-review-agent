@@ -20,7 +20,18 @@ warn_return_any = true
 # gitpython, streamlit, and requests ship no inline type stubs;
 # bare module names (e.g. "git", "requests") must be listed explicitly —
 # the "git.*" / "requests.*" globs only cover submodules, not the top-level name
-module = ["git", "git.*", "streamlit", "streamlit.*", "requests", "requests.*"]
+module = [
+    "git",
+    "git.*",
+    "redis",
+    "redis.*",
+    "rq",
+    "rq.*",
+    "streamlit",
+    "streamlit.*",
+    "requests",
+    "requests.*",
+]
 ignore_missing_imports = true
 
 [tool.coverage.run]

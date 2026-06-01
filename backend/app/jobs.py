@@ -1,10 +1,13 @@
 import logging
 import tempfile
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Protocol, cast
 
+from app.core import config
 from app.db.database import AnalysisHistoryStore, AnalysisJobRecord
 from app.models.schemas import AnalysisHistoryDetail, AnalyzeResponse
 from app.services.action_plan import generate_action_plan
@@ -34,6 +37,11 @@ class JobState:
 # Module-level job store. Dict operations are atomic on CPython (GIL), so
 # no explicit lock is needed for simple get/set from multiple threads.
 _jobs: dict[str, JobState] = {}
+
+
+class QueueAdapter(Protocol):
+    def enqueue(self, function: Callable[[str, str], None], *args: str) -> object:
+        pass
 
 
 def create_job(history_store: AnalysisHistoryStore, repo_url: str) -> str:
@@ -86,12 +94,38 @@ def start_analysis_thread(
     job_id: str, repo_url: str, history_store: AnalysisHistoryStore
 ) -> None:
     """Spawn a daemon thread to run the analysis for job_id."""
+    if config.ANALYSIS_QUEUE_BACKEND == "redis":
+        enqueue_analysis_job(job_id=job_id, repo_url=repo_url)
+        return
+
     thread = threading.Thread(
         target=_run_analysis,
         args=(job_id, repo_url, history_store),
         daemon=True,
     )
     thread.start()
+
+
+def enqueue_analysis_job(
+    job_id: str,
+    repo_url: str,
+    queue: QueueAdapter | None = None,
+) -> None:
+    if queue is None:
+        from app.worker import get_queue
+
+        active_queue = cast(QueueAdapter, get_queue())
+    else:
+        active_queue = queue
+
+    active_queue.enqueue(run_analysis_job, job_id, repo_url)
+
+
+def run_analysis_job(job_id: str, repo_url: str) -> None:
+    history_store = AnalysisHistoryStore()
+    record = history_store.get_job(job_id)
+    _jobs[job_id] = _state_from_record(record) if record else JobState(job_id=job_id)
+    _run_analysis(job_id=job_id, repo_url=repo_url, history_store=history_store)
 
 
 def _run_analysis(
