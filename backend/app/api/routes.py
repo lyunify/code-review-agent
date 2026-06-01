@@ -20,7 +20,7 @@ history_store = AnalysisHistoryStore()
 @router.post("/analyze", response_model=JobCreatedResponse)
 def analyze_repo(request: AnalyzeRequest) -> JobCreatedResponse:
     repo_url = str(request.repo_url).rstrip("/")
-    job_id = create_job()
+    job_id = create_job(history_store=history_store, repo_url=repo_url)
     logger.info("Job created: job_id=%s repo=%s", job_id, repo_url)
     start_analysis_thread(job_id=job_id, repo_url=repo_url, history_store=history_store)
     return JobCreatedResponse(job_id=job_id)
@@ -28,7 +28,7 @@ def analyze_repo(request: AnalyzeRequest) -> JobCreatedResponse:
 
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
 def get_job_status(job_id: str) -> JobStatusResponse:
-    job = get_job(job_id)
+    job = get_job(job_id, history_store=history_store)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return JobStatusResponse(

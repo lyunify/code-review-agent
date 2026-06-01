@@ -1,13 +1,12 @@
 import logging
 import tempfile
 import threading
-import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app.db.database import AnalysisHistoryStore
-from app.models.schemas import AnalyzeResponse
+from app.db.database import AnalysisHistoryStore, AnalysisJobRecord
+from app.models.schemas import AnalysisHistoryDetail, AnalyzeResponse
 from app.services.action_plan import generate_action_plan
 from app.services.analyzer import analyze_repository
 from app.services.github_metadata import fetch_github_metadata, get_repo_size_kb
@@ -37,16 +36,50 @@ class JobState:
 _jobs: dict[str, JobState] = {}
 
 
-def create_job() -> str:
-    """Evict stale jobs, create a new pending job, return its job_id."""
+def create_job(history_store: AnalysisHistoryStore, repo_url: str) -> str:
+    """Evict stale in-memory results, persist a pending job, return its job_id."""
     _evict_old_jobs()
-    job_id = str(uuid.uuid4())
-    _jobs[job_id] = JobState(job_id=job_id)
-    return job_id
+    record = history_store.create_job(repo_url)
+    _jobs[record.job_id] = _state_from_record(record)
+    return record.job_id
 
 
-def get_job(job_id: str) -> JobState | None:
-    return _jobs.get(job_id)
+def get_job(job_id: str, history_store: AnalysisHistoryStore) -> JobState | None:
+    record = history_store.get_job(job_id)
+    if record is None:
+        return None
+    cached = _jobs.get(job_id)
+    state = _state_from_record(record)
+    if cached and cached.result is not None:
+        state.result = cached.result
+    elif record.result_history_id is not None:
+        detail = history_store.get_analysis(record.result_history_id)
+        if detail is not None:
+            state.result = _response_from_history_detail(detail)
+    _jobs[job_id] = state
+    return state
+
+
+def _state_from_record(record: AnalysisJobRecord) -> JobState:
+    return JobState(
+        job_id=record.job_id,
+        status=record.status,
+        progress=record.progress,
+        error=record.error,
+        created_at=record.created_at,
+    )
+
+
+def _response_from_history_detail(detail: AnalysisHistoryDetail) -> AnalyzeResponse:
+    return AnalyzeResponse(
+        repo_url=detail.repo_url,
+        analysis=detail.analysis,
+        github_metadata=detail.github_metadata,
+        report=detail.report,
+        readiness=detail.readiness,
+        mentor_feedback=detail.mentor_feedback,
+        action_plan=detail.action_plan,
+    )
 
 
 def start_analysis_thread(
@@ -66,8 +99,9 @@ def _run_analysis(
 ) -> None:
     job = _jobs[job_id]
     job.status = "running"
+    history_store.mark_job_running(job_id, progress="Checking repository size...")
     try:
-        job.progress = "Checking repository size..."
+        _set_progress(job, history_store, "Checking repository size...")
         size_kb = get_repo_size_kb(repo_url)
         if size_kb > _MAX_REPO_SIZE_KB:
             raise ValueError(
@@ -75,24 +109,24 @@ def _run_analysis(
                 f"Maximum supported size is 150 MB."
             )
 
-        job.progress = "Cloning repository..."
+        _set_progress(job, history_store, "Cloning repository...")
         with tempfile.TemporaryDirectory(prefix="code-review-agent-") as tmpdir:
             repo_path = Path(tmpdir) / "repo"
             clone_repository(repo_url, repo_path)
 
-            job.progress = "Analyzing files..."
+            _set_progress(job, history_store, "Analyzing files...")
             analysis = analyze_repository(repo_path)
         # tmpdir is deleted here — analysis data is already in memory
 
-        job.progress = "Fetching repository metadata..."
+        _set_progress(job, history_store, "Fetching repository metadata...")
         github_metadata = fetch_github_metadata(repo_url)
 
-        job.progress = "Computing readiness score..."
+        _set_progress(job, history_store, "Computing readiness score...")
         report = generate_report(analysis)
         readiness = calculate_readiness(analysis)
         action_plan = generate_action_plan(analysis=analysis, readiness=readiness)
 
-        job.progress = "Generating mentor feedback..."
+        _set_progress(job, history_store, "Generating mentor feedback...")
         mentor_feedback = generate_mentor_feedback(
             repo_url=repo_url,
             analysis=analysis,
@@ -100,7 +134,7 @@ def _run_analysis(
             github_metadata=github_metadata,
         )
 
-        history_store.save_analysis(
+        saved = history_store.save_analysis(
             repo_url=repo_url,
             analysis=analysis,
             report=report,
@@ -121,6 +155,7 @@ def _run_analysis(
         )
         job.status = "done"
         job.progress = "Done"
+        history_store.mark_job_done(job_id, result_history_id=saved.id)
         logger.info(
             "Job complete: job_id=%s repo=%s score=%d",
             job_id,
@@ -132,6 +167,7 @@ def _run_analysis(
         job.error = str(exc)
         job.status = "failed"
         job.progress = "Failed"
+        history_store.mark_job_failed(job_id, error=str(exc))
         logger.error("Job failed: job_id=%s repo=%s error=%s", job_id, repo_url, exc)
 
 
@@ -145,3 +181,10 @@ def _evict_old_jobs() -> None:
     ]
     for jid in stale:
         _jobs.pop(jid, None)
+
+
+def _set_progress(
+    job: JobState, history_store: AnalysisHistoryStore, progress: str
+) -> None:
+    job.progress = progress
+    history_store.update_job_progress(job.job_id, progress=progress)

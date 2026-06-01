@@ -98,3 +98,42 @@ def test_get_analysis_returns_none_for_missing_id(tmp_path: Path) -> None:
     store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
     result = store.get_analysis(9999)
     assert result is None
+
+
+def test_job_store_persists_status_transitions(tmp_path: Path) -> None:
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+
+    created = store.create_job("https://github.com/example/demo")
+    running = store.mark_job_running(created.job_id, progress="Cloning repository...")
+    done = store.mark_job_done(created.job_id, result_history_id=42)
+    fetched = store.get_job(created.job_id)
+
+    assert created.repo_url == "https://github.com/example/demo"
+    assert created.status == "pending"
+    assert created.progress == "Queued..."
+    assert running is not None
+    assert running.status == "running"
+    assert running.progress == "Cloning repository..."
+    assert done is not None
+    assert done.status == "done"
+    assert done.progress == "Done"
+    assert done.result_history_id == 42
+    assert fetched is not None
+    assert fetched.status == "done"
+    assert fetched.result_history_id == 42
+
+
+def test_job_store_persists_failed_status(tmp_path: Path) -> None:
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+
+    created = store.create_job("https://github.com/example/demo")
+    failed = store.mark_job_failed(created.job_id, error="Repository is too large")
+    fetched = store.get_job(created.job_id)
+
+    assert failed is not None
+    assert failed.status == "failed"
+    assert failed.progress == "Failed"
+    assert failed.error == "Repository is too large"
+    assert fetched is not None
+    assert fetched.status == "failed"
+    assert fetched.error == "Repository is too large"

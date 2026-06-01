@@ -4,7 +4,13 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from app.models.schemas import GitHubMetadata, InterviewQuestion, MentorFeedback, RepositoryAnalysis, ResumeReadiness
+from app.models.schemas import (
+    GitHubMetadata,
+    InterviewQuestion,
+    MentorFeedback,
+    RepositoryAnalysis,
+    ResumeReadiness,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -273,7 +279,7 @@ def _build_interview_questions(
     questions.append(InterviewQuestion(
         question=f"Why did you choose {primary_language} for this project?",
         situation=f"I was building {project_name} to solve a real problem I encountered.",
-        task=f"I needed to choose a language and stack that matched the project's requirements.",
+        task="I needed to choose a language and stack that matched the project's requirements.",
         action=f"I chose {primary_language} because it had strong support for the core workflows I needed to implement.",
         result="The choice let me move quickly while keeping the codebase readable and maintainable.",
     ))

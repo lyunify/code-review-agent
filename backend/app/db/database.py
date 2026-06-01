@@ -1,11 +1,13 @@
 import logging
+import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from sqlalchemy import create_engine, desc, select
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import DATABASE_URL
-from app.db.models import AnalysisHistoryRow, Base
+from app.db.models import AnalysisHistoryRow, AnalysisJobRow, Base
 from app.models.schemas import (
     ActionPlan,
     AnalysisHistoryDetail,
@@ -20,6 +22,18 @@ from app.models.schemas import (
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class AnalysisJobRecord:
+    job_id: str
+    repo_url: str
+    status: str
+    progress: str
+    result_history_id: int | None
+    error: str | None
+    created_at: str
+    updated_at: str
+
+
 class AnalysisHistoryStore:
     def __init__(self, db_url: str = DATABASE_URL) -> None:
         connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
@@ -27,6 +41,85 @@ class AnalysisHistoryStore:
         Base.metadata.create_all(self._engine)
         self._Session = sessionmaker(self._engine)
         logger.info("Database initialized: %s", db_url.split("@")[-1])
+
+    def create_job(self, repo_url: str) -> AnalysisJobRecord:
+        now = datetime.now(UTC).isoformat()
+        row = AnalysisJobRow(
+            id=str(uuid.uuid4()),
+            repo_url=repo_url,
+            status="pending",
+            progress="Queued...",
+            result_history_id=None,
+            error=None,
+            created_at=now,
+            updated_at=now,
+        )
+        with self._Session() as session:
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+
+        logger.info("Job saved: job_id=%s repo=%s", row.id, repo_url)
+        return _job_record_from_row(row)
+
+    def get_job(self, job_id: str) -> AnalysisJobRecord | None:
+        with self._Session() as session:
+            row = session.get(AnalysisJobRow, job_id)
+            if row is None:
+                return None
+            return _job_record_from_row(row)
+
+    def mark_job_running(self, job_id: str, progress: str = "Running...") -> AnalysisJobRecord | None:
+        return self._update_job(job_id=job_id, status="running", progress=progress, error=None)
+
+    def update_job_progress(self, job_id: str, progress: str) -> AnalysisJobRecord | None:
+        with self._Session() as session:
+            row = session.get(AnalysisJobRow, job_id)
+            if row is None:
+                return None
+            row.progress = progress
+            row.updated_at = datetime.now(UTC).isoformat()
+            session.commit()
+            session.refresh(row)
+            return _job_record_from_row(row)
+
+    def mark_job_done(self, job_id: str, result_history_id: int) -> AnalysisJobRecord | None:
+        return self._update_job(
+            job_id=job_id,
+            status="done",
+            progress="Done",
+            result_history_id=result_history_id,
+            error=None,
+        )
+
+    def mark_job_failed(self, job_id: str, error: str) -> AnalysisJobRecord | None:
+        return self._update_job(
+            job_id=job_id,
+            status="failed",
+            progress="Failed",
+            error=error,
+        )
+
+    def _update_job(
+        self,
+        job_id: str,
+        status: str,
+        progress: str,
+        result_history_id: int | None = None,
+        error: str | None = None,
+    ) -> AnalysisJobRecord | None:
+        with self._Session() as session:
+            row = session.get(AnalysisJobRow, job_id)
+            if row is None:
+                return None
+            row.status = status
+            row.progress = progress
+            row.result_history_id = result_history_id
+            row.error = error
+            row.updated_at = datetime.now(UTC).isoformat()
+            session.commit()
+            session.refresh(row)
+            return _job_record_from_row(row)
 
     def save_analysis(
         self,
@@ -124,3 +217,16 @@ class AnalysisHistoryStore:
             mentor_feedback=MentorFeedback.model_validate_json(row.mentor_feedback_json),
             action_plan=ActionPlan.model_validate_json(row.action_plan_json),
         )
+
+
+def _job_record_from_row(row: AnalysisJobRow) -> AnalysisJobRecord:
+    return AnalysisJobRecord(
+        job_id=row.id,
+        repo_url=row.repo_url,
+        status=row.status,
+        progress=row.progress,
+        result_history_id=row.result_history_id,
+        error=row.error,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )

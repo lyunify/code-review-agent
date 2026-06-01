@@ -23,3 +23,16 @@ class AnalysisHistoryRow(Base):
     mentor_feedback_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     action_plan_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     github_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class AnalysisJobRow(Base):
+    __tablename__ = "analysis_jobs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    repo_url: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    progress: Mapped[str] = mapped_column(String, nullable=False)
+    result_history_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[str] = mapped_column(String, nullable=False)
+    updated_at: Mapped[str] = mapped_column(String, nullable=False)
