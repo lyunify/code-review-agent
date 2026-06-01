@@ -10,6 +10,7 @@ from app.core.config import (
     is_ignored_path,
 )
 from app.models.schemas import FileMetric, RepositoryAnalysis, RiskSignal
+from app.services.project_intelligence import infer_project_intelligence
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,7 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     largest_files = sorted(files, key=lambda file: file.size_bytes, reverse=True)[:MAX_LARGEST_FILES]
     risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
     has_frontend_backend_structure = {"frontend", "backend"}.issubset(top_level_directories)
+    project_intelligence = infer_project_intelligence(root, files)
 
     logger.info("Analysis complete: files=%d languages=%s risks=%d", len(files), list(languages.keys()), len(risks))
     return RepositoryAnalysis(
@@ -110,6 +112,7 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
         languages=dict(sorted(languages.items())),
         largest_files=largest_files,
         risks=risks,
+        project_intelligence=project_intelligence,
         has_readme=has_readme,
         has_tests=has_tests,
         has_gitignore=has_gitignore,

@@ -32,12 +32,54 @@ class RiskSignal(BaseModel):
     path: str | None = None
 
 
+class StackEvidence(BaseModel):
+    path: str
+    reason: str
+
+
+class StackItem(BaseModel):
+    name: str
+    category: str
+    description: str
+    confidence: str
+    evidence: list[StackEvidence] = Field(default_factory=list)
+
+
+class ArchitectureNode(BaseModel):
+    id: str
+    label: str
+    kind: str
+    confidence: str
+    evidence: list[StackEvidence] = Field(default_factory=list)
+
+
+class ArchitectureEdge(BaseModel):
+    source: str
+    target: str
+    label: str
+    confidence: str
+    evidence: list[StackEvidence] = Field(default_factory=list)
+
+
+class ArchitectureFlow(BaseModel):
+    summary: str = "No architecture inference available for this scan."
+    nodes: list[ArchitectureNode] = Field(default_factory=list)
+    edges: list[ArchitectureEdge] = Field(default_factory=list)
+    mermaid: str = ""
+
+
+class ProjectIntelligence(BaseModel):
+    stack: list[StackItem] = Field(default_factory=list)
+    architecture: ArchitectureFlow = Field(default_factory=ArchitectureFlow)
+
+
 class RepositoryAnalysis(BaseModel):
     total_files: int
     total_directories: int
     languages: dict[str, int]
     largest_files: list[FileMetric]
     risks: list[RiskSignal]
+    project_intelligence: ProjectIntelligence = Field(default_factory=ProjectIntelligence)
     has_readme: bool
     has_tests: bool
     has_gitignore: bool = False

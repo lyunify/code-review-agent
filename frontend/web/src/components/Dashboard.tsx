@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle2, Download, Github, Layers3 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck } from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
-import type { AnalyzeResponse } from '../types'
+import type { AnalyzeResponse, ArchitectureEdge, ProjectIntelligence, StackItem } from '../types'
 import type { Tab } from '../uiTypes'
 import { Eyebrow, ScoreGauge, scoreBand, scoreGrade } from './Shared'
 
@@ -32,6 +32,7 @@ export function Dashboard({
   )
   const totalLang = languageEntries.reduce((sum, [, n]) => sum + n, 0) || 1
   const repoName = result.repo_url.replace('https://github.com/', '')
+  const intelligence = result.analysis.project_intelligence ?? EMPTY_INTELLIGENCE
 
   function handleDownloadReport() {
     const report = generateMarkdownReport(result)
@@ -137,6 +138,9 @@ export function Dashboard({
           </div>
         </div>
 
+        <StackMap intelligence={intelligence} />
+        <ArchitectureMap intelligence={intelligence} />
+
         {/* github signals */}
         <div className="card b-tile b-signals">
           <div className="panel-heading">
@@ -159,6 +163,102 @@ export function Dashboard({
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+const EMPTY_INTELLIGENCE: ProjectIntelligence = {
+  stack: [],
+  architecture: { summary: 'No architecture inference available for this scan.', nodes: [], edges: [], mermaid: '' },
+}
+
+const STACK_ORDER = ['Frontend', 'Backend', 'Database', 'Data/Queue', 'Infrastructure', 'Quality/CI', 'AI/External API']
+
+function StackMap({ intelligence }: { intelligence: ProjectIntelligence }) {
+  const groups = STACK_ORDER.map((category) => ({
+    category,
+    items: intelligence.stack.filter((item) => item.category === category),
+  })).filter((group) => group.items.length > 0)
+
+  return (
+    <div className="card b-tile b-stack">
+      <div className="panel-heading">
+        <PackageCheck size={18} />
+        <h3>Stack Map</h3>
+      </div>
+      {groups.length === 0 ? (
+        <p className="intelligence-empty">No stack evidence found yet.</p>
+      ) : (
+        <div className="stack-groups">
+          {groups.map((group) => (
+            <section className="stack-group" key={group.category}>
+              <span className="stack-category">{group.category}</span>
+              <div className="stack-list">
+                {group.items.slice(0, 5).map((item) => (
+                  <StackChip item={item} key={`${item.category}-${item.name}`} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StackChip({ item }: { item: StackItem }) {
+  const primaryEvidence = item.evidence[0]
+  return (
+    <article className="stack-chip">
+      <div>
+        <strong>{item.name}</strong>
+        <span>{item.description}</span>
+      </div>
+      <small title={primaryEvidence ? `${primaryEvidence.path}: ${primaryEvidence.reason}` : undefined}>
+        {item.confidence} · {primaryEvidence?.path ?? 'static scan'}
+      </small>
+    </article>
+  )
+}
+
+function ArchitectureMap({ intelligence }: { intelligence: ProjectIntelligence }) {
+  const architecture = intelligence.architecture
+  const visibleEdges = architecture.edges.slice(0, 6)
+
+  return (
+    <div className="card b-tile b-flow">
+      <div className="panel-heading">
+        <Network size={18} />
+        <h3>Architecture Flow</h3>
+      </div>
+      <p className="flow-summary">{architecture.summary}</p>
+      {visibleEdges.length === 0 ? (
+        <p className="intelligence-empty">No flow edges inferred yet.</p>
+      ) : (
+        <>
+          <div className="flow-lane">
+            {visibleEdges.map((edge) => (
+              <FlowEdge edge={edge} key={`${edge.source}-${edge.target}-${edge.label}`} />
+            ))}
+          </div>
+          <details className="mermaid-box">
+            <summary>Mermaid source</summary>
+            <pre>{architecture.mermaid}</pre>
+          </details>
+        </>
+      )}
+    </div>
+  )
+}
+
+function FlowEdge({ edge }: { edge: ArchitectureEdge }) {
+  const evidence = edge.evidence[0]
+  return (
+    <div className="flow-edge">
+      <span className="flow-node">{edge.source}</span>
+      <span className="flow-arrow">{edge.label}</span>
+      <span className="flow-node">{edge.target}</span>
+      <small title={evidence ? evidence.reason : undefined}>{evidence?.path ?? edge.confidence}</small>
     </div>
   )
 }

@@ -21,6 +21,23 @@ export function generateMarkdownReport(result: AnalyzeResponse): string {
     ? result.analysis.risks.map((risk) => `- ${risk.severity}: ${risk.message}${risk.path ? ` (${risk.path})` : ''}`).join('\n')
     : '- No risk signals found.'
   const topics = result.github_metadata.topics.length ? result.github_metadata.topics.join(', ') : 'None'
+  const intelligence = result.analysis.project_intelligence
+  const stackMap = intelligence?.stack.length
+    ? intelligence.stack
+        .map((item) => {
+          const evidence = item.evidence[0]
+          return `- **${item.name}** (${item.category}, ${item.confidence}): ${item.description}${evidence ? ` Evidence: ${evidence.path}` : ''}`
+        })
+        .join('\n')
+    : '- No stack evidence found.'
+  const architecture = intelligence?.architecture.edges.length
+    ? `${intelligence.architecture.summary}\n\n${intelligence.architecture.edges
+        .map((edge) => {
+          const evidence = edge.evidence[0]
+          return `- ${edge.source} -> ${edge.target}: ${edge.label}${evidence ? ` (${evidence.path})` : ''}`
+        })
+        .join('\n')}\n\n\`\`\`mermaid\n${intelligence.architecture.mermaid}\n\`\`\``
+    : intelligence?.architecture.summary ?? 'No architecture inference available.'
 
   return `# Repository Readiness Report
 
@@ -55,6 +72,14 @@ ${checklist}
 ## Technical Summary
 
 ${result.report.summary}
+
+## Stack Map
+
+${stackMap}
+
+## Architecture Flow
+
+${architecture}
 
 ## GitHub Profile Signals
 

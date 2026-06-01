@@ -11,12 +11,54 @@ export type RiskSignal = {
   path: string | null
 }
 
+export type StackEvidence = {
+  path: string
+  reason: string
+}
+
+export type StackItem = {
+  name: string
+  category: string
+  description: string
+  confidence: string
+  evidence: StackEvidence[]
+}
+
+export type ArchitectureNode = {
+  id: string
+  label: string
+  kind: string
+  confidence: string
+  evidence: StackEvidence[]
+}
+
+export type ArchitectureEdge = {
+  source: string
+  target: string
+  label: string
+  confidence: string
+  evidence: StackEvidence[]
+}
+
+export type ArchitectureFlow = {
+  summary: string
+  nodes: ArchitectureNode[]
+  edges: ArchitectureEdge[]
+  mermaid: string
+}
+
+export type ProjectIntelligence = {
+  stack: StackItem[]
+  architecture: ArchitectureFlow
+}
+
 export type RepositoryAnalysis = {
   total_files: number
   total_directories: number
   languages: Record<string, number>
   largest_files: FileMetric[]
   risks: RiskSignal[]
+  project_intelligence?: ProjectIntelligence
 }
 
 export type GitHubMetadata = {
