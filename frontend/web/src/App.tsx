@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { analyzeRepository, fetchHistory, fetchHistoryRecord, getFriendlyErrorMessage } from './api'
+import {
+  analyzeRepository,
+  devLogin,
+  fetchCurrentUser,
+  fetchHistory,
+  fetchHistoryRecord,
+  getFriendlyErrorMessage,
+  logout,
+} from './api'
 import { ActionPlanView } from './components/ActionPlanView'
 import { CommandBar } from './components/CommandBar'
 import { Dashboard } from './components/Dashboard'
@@ -11,7 +19,7 @@ import { MentorView } from './components/MentorView'
 import { RubricView } from './components/RubricView'
 import { TopNav } from './components/TopNav'
 import { getDemoAnalysisResult } from './demoData'
-import type { AnalyzeResponse, HistoryRecord } from './types'
+import type { AnalyzeResponse, CurrentUser, HistoryRecord } from './types'
 import type { Tab, View } from './uiTypes'
 
 const SAMPLE_REPO_URL = 'https://github.com/lyunify/repo-ready'
@@ -36,12 +44,44 @@ function App() {
   const [pollCount, setPollCount] = useState(0)
   const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
 
   useEffect(() => {
-    fetchHistory()
-      .then(setHistory)
-      .catch(() => setHistory([]))
+    refreshSessionState()
   }, [])
+
+  async function refreshSessionState() {
+    try {
+      const user = await fetchCurrentUser()
+      setCurrentUser(user)
+      setHistory(await fetchHistory())
+    } catch {
+      setCurrentUser(null)
+      setHistory([])
+    }
+  }
+
+  async function handleDevLogin() {
+    setError(null)
+    try {
+      const user = await devLogin('katy')
+      setCurrentUser(user)
+      setHistory(await fetchHistory())
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err instanceof Error ? err.message : 'Could not sign in'))
+    }
+  }
+
+  async function handleLogout() {
+    setError(null)
+    try {
+      await logout()
+      setCurrentUser(null)
+      setHistory(await fetchHistory())
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err instanceof Error ? err.message : 'Could not sign out'))
+    }
+  }
 
   async function handleAnalyze(nextRepoUrl = repoUrl) {
     const targetRepoUrl = nextRepoUrl.trim()
@@ -89,7 +129,12 @@ function App() {
 
   return (
     <main className="workspace">
-      <TopNav onHistoryOpen={() => setIsDrawerOpen(true)} />
+      <TopNav
+        currentUser={currentUser}
+        onDevLogin={() => void handleDevLogin()}
+        onLogout={() => void handleLogout()}
+        onHistoryOpen={() => setIsDrawerOpen(true)}
+      />
 
       <HistoryDrawer
         isOpen={isDrawerOpen}

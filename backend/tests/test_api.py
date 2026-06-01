@@ -6,7 +6,14 @@ from fastapi.testclient import TestClient
 
 from app.db.database import AnalysisHistoryStore
 from app.main import app
-from app.models.schemas import GitHubMetadata
+from app.models.schemas import (
+    ActionPlan,
+    GitHubMetadata,
+    MentorFeedback,
+    RepositoryAnalysis,
+    ResumeReadiness,
+    ReviewReport,
+)
 
 
 def _make_repo(tmp_path: Path) -> Path:
@@ -108,6 +115,61 @@ def test_root_endpoint_lists_backend_entrypoints() -> None:
     }
 
 
+def test_dev_login_me_and_logout_use_session_cookie(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.history_store",
+        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+    )
+    client = TestClient(app)
+
+    login_response = client.post("/api/auth/dev-login", json={"username": "Katy"})
+    assert login_response.status_code == 200
+    assert login_response.json()["user"]["username"] == "katy"
+    assert "repo_ready_session" in login_response.cookies
+
+    me_response = client.get("/api/auth/me")
+    assert me_response.status_code == 200
+    assert me_response.json()["user"]["username"] == "katy"
+
+    logout_response = client.post("/api/auth/logout")
+    assert logout_response.status_code == 200
+    assert logout_response.json() == {"ok": True}
+    assert client.get("/api/auth/me").json() == {"user": None}
+
+
+def test_history_endpoint_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> None:
+    db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    monkeypatch.setattr("app.api.routes.history_store", db_store)
+    alice = db_store.create_or_get_dev_user("alice")
+    bob = db_store.create_or_get_dev_user("bob")
+    anonymous_record = _save_minimal_history(db_store, "https://github.com/example/public")
+    alice_record = _save_minimal_history(
+        db_store,
+        "https://github.com/example/alice",
+        user_id=alice.id,
+    )
+    bob_record = _save_minimal_history(
+        db_store,
+        "https://github.com/example/bob",
+        user_id=bob.id,
+    )
+
+    anonymous_client = TestClient(app)
+    anonymous_response = anonymous_client.get("/api/history")
+    assert [record["id"] for record in anonymous_response.json()["records"]] == [
+        anonymous_record.id
+    ]
+
+    alice_client = TestClient(app)
+    alice_client.post("/api/auth/dev-login", json={"username": "alice"})
+    alice_response = alice_client.get("/api/history")
+    assert [record["id"] for record in alice_response.json()["records"]] == [
+        alice_record.id
+    ]
+    assert alice_client.get(f"/api/history/{alice_record.id}").status_code == 200
+    assert alice_client.get(f"/api/history/{bob_record.id}").status_code == 404
+
+
 def test_health_ready_checks_database(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         "app.main.history_store",
@@ -194,7 +256,11 @@ def test_job_fails_when_repo_too_large(monkeypatch, tmp_path: Path) -> None:
     assert "too large" in result["error"].lower()
 
 
-def test_get_unknown_job_returns_404() -> None:
+def test_get_unknown_job_returns_404(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.history_store",
+        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+    )
     client = TestClient(app)
     response = client.get("/api/jobs/nonexistent-job-id")
     assert response.status_code == 404
@@ -239,3 +305,38 @@ def test_history_detail_returns_404_for_missing_record(monkeypatch, tmp_path: Pa
     client = TestClient(app)
     response = client.get("/api/history/999")
     assert response.status_code == 404
+
+
+def _save_minimal_history(
+    store: AnalysisHistoryStore,
+    repo_url: str,
+    user_id: int | None = None,
+):
+    return store.save_analysis(
+        repo_url=repo_url,
+        analysis=RepositoryAnalysis(
+            total_files=1,
+            total_directories=0,
+            languages={"Python": 1},
+            largest_files=[],
+            risks=[],
+            has_readme=True,
+            has_tests=True,
+        ),
+        report=ReviewReport(summary=f"Scanned {repo_url}", recommendations=[]),
+        readiness=ResumeReadiness(
+            score=80,
+            status="Almost ready",
+            checklist=[],
+            priority_fixes=[],
+        ),
+        mentor_feedback=MentorFeedback(
+            mentor_summary="Almost ready.",
+            resume_bullets=[],
+            interview_questions=[],
+            next_steps=[],
+        ),
+        action_plan=ActionPlan(items=[]),
+        github_metadata=GitHubMetadata(available=True, full_name="example/demo"),
+        user_id=user_id,
+    )

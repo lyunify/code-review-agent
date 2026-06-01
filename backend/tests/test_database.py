@@ -143,6 +143,66 @@ def test_job_store_persists_failed_status(tmp_path: Path) -> None:
     assert fetched.error == "Repository is too large"
 
 
+def test_user_sessions_and_history_are_user_scoped(tmp_path: Path) -> None:
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    alice = store.create_or_get_dev_user("alice")
+    bob = store.create_or_get_dev_user("bob")
+    session = store.create_session(alice.id)
+
+    assert alice.id != bob.id
+    assert store.get_user_by_session(session.session_id) == alice
+
+    analysis = RepositoryAnalysis(
+        total_files=1,
+        total_directories=0,
+        languages={"Python": 1},
+        largest_files=[],
+        risks=[],
+        has_readme=True,
+        has_tests=True,
+    )
+    report = ReviewReport(summary="Alice scan", recommendations=[])
+    readiness = ResumeReadiness(score=80, status="Almost ready", checklist=[], priority_fixes=[])
+    mentor_feedback = MentorFeedback(
+        mentor_summary="Almost ready.",
+        resume_bullets=[],
+        interview_questions=[],
+        next_steps=[],
+    )
+    action_plan = ActionPlan(items=[])
+    github_metadata = GitHubMetadata(available=True, full_name="example/alice")
+
+    alice_record = store.save_analysis(
+        repo_url="https://github.com/example/alice",
+        analysis=analysis,
+        report=report,
+        readiness=readiness,
+        mentor_feedback=mentor_feedback,
+        action_plan=action_plan,
+        github_metadata=github_metadata,
+        user_id=alice.id,
+    )
+    store.save_analysis(
+        repo_url="https://github.com/example/bob",
+        analysis=analysis,
+        report=ReviewReport(summary="Bob scan", recommendations=[]),
+        readiness=readiness,
+        mentor_feedback=mentor_feedback,
+        action_plan=action_plan,
+        github_metadata=GitHubMetadata(available=True, full_name="example/bob"),
+        user_id=bob.id,
+    )
+
+    assert [record.repo_url for record in store.list_recent(user_id=alice.id)] == [
+        "https://github.com/example/alice"
+    ]
+    assert store.get_analysis(alice_record.id, user_id=alice.id) is not None
+    assert store.get_analysis(alice_record.id, user_id=bob.id) is None
+
+    store.delete_session(session.session_id)
+    assert store.get_user_by_session(session.session_id) is None
+
+
 def test_alembic_initial_schema_creates_tables(tmp_path: Path) -> None:
     db_url = f"sqlite:///{tmp_path}/migration.db"
     config = Config("alembic.ini")
@@ -152,4 +212,8 @@ def test_alembic_initial_schema_creates_tables(tmp_path: Path) -> None:
 
     engine = create_engine(db_url)
     tables = set(inspect(engine).get_table_names())
-    assert {"analysis_history", "analysis_jobs", "alembic_version"}.issubset(tables)
+    assert {"analysis_history", "analysis_jobs", "users", "sessions", "alembic_version"}.issubset(tables)
+    history_columns = {column["name"] for column in inspect(engine).get_columns("analysis_history")}
+    job_columns = {column["name"] for column in inspect(engine).get_columns("analysis_jobs")}
+    assert "user_id" in history_columns
+    assert "user_id" in job_columns

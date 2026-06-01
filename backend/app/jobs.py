@@ -44,10 +44,14 @@ class QueueAdapter(Protocol):
         pass
 
 
-def create_job(history_store: AnalysisHistoryStore, repo_url: str) -> str:
+def create_job(
+    history_store: AnalysisHistoryStore,
+    repo_url: str,
+    user_id: int | None = None,
+) -> str:
     """Evict stale in-memory results, persist a pending job, return its job_id."""
     _evict_old_jobs()
-    record = history_store.create_job(repo_url)
+    record = history_store.create_job(repo_url, user_id=user_id)
     _jobs[record.job_id] = _state_from_record(record)
     return record.job_id
 
@@ -61,7 +65,7 @@ def get_job(job_id: str, history_store: AnalysisHistoryStore) -> JobState | None
     if cached and cached.result is not None:
         state.result = cached.result
     elif record.result_history_id is not None:
-        detail = history_store.get_analysis(record.result_history_id)
+        detail = history_store.get_analysis(record.result_history_id, user_id=record.user_id)
         if detail is not None:
             state.result = _response_from_history_detail(detail)
     _jobs[job_id] = state
@@ -132,6 +136,8 @@ def _run_analysis(
     job_id: str, repo_url: str, history_store: AnalysisHistoryStore
 ) -> None:
     job = _jobs[job_id]
+    job_record = history_store.get_job(job_id)
+    user_id = job_record.user_id if job_record else None
     job.status = "running"
     history_store.mark_job_running(job_id, progress="Checking repository size...")
     try:
@@ -176,6 +182,7 @@ def _run_analysis(
             mentor_feedback=mentor_feedback,
             action_plan=action_plan,
             github_metadata=github_metadata,
+            user_id=user_id,
         )
 
         job.result = AnalyzeResponse(

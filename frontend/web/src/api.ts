@@ -1,4 +1,4 @@
-import type { AnalyzeResponse, HistoryDetail, HistoryRecord, JobStatusResponse } from './types'
+import type { AnalyzeResponse, CurrentUser, HistoryDetail, HistoryRecord, JobStatusResponse } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
@@ -14,6 +14,7 @@ export async function analyzeRepository(repoUrl: string, onPoll?: (count: number
   const startResponse = await fetch(`${API_BASE_URL}/api/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ repo_url: normalizeRepoUrl(repoUrl) }),
   })
   if (!startResponse.ok) {
@@ -27,7 +28,9 @@ async function pollJob(jobId: string, onPoll?: (count: number) => void): Promise
   const MAX_POLLS = 300 // 10 minutes at 2s intervals
   for (let poll = 0; poll < MAX_POLLS; poll++) {
     onPoll?.(poll)
-    const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`)
+    const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+      credentials: 'include',
+    })
     if (!response.ok) {
       throw new Error(await getErrorMessage(response))
     }
@@ -44,7 +47,9 @@ async function pollJob(jobId: string, onPoll?: (count: number) => void): Promise
 }
 
 export async function fetchHistory(): Promise<HistoryRecord[]> {
-  const response = await fetch(`${API_BASE_URL}/api/history`)
+  const response = await fetch(`${API_BASE_URL}/api/history`, {
+    credentials: 'include',
+  })
   if (!response.ok) {
     throw new Error(await getErrorMessage(response))
   }
@@ -53,11 +58,48 @@ export async function fetchHistory(): Promise<HistoryRecord[]> {
 }
 
 export async function fetchHistoryRecord(recordId: number): Promise<HistoryDetail> {
-  const response = await fetch(`${API_BASE_URL}/api/history/${recordId}`)
+  const response = await fetch(`${API_BASE_URL}/api/history/${recordId}`, {
+    credentials: 'include',
+  })
   if (!response.ok) {
     throw new Error(await getErrorMessage(response))
   }
   return response.json()
+}
+
+export async function fetchCurrentUser(): Promise<CurrentUser | null> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response))
+  }
+  const payload = (await response.json()) as { user: CurrentUser | null }
+  return payload.user
+}
+
+export async function devLogin(username: string): Promise<CurrentUser> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/dev-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ username }),
+  })
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response))
+  }
+  const payload = (await response.json()) as { user: CurrentUser }
+  return payload.user
+}
+
+export async function logout(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response))
+  }
 }
 
 export function getFriendlyErrorMessage(message: string): string {

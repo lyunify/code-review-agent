@@ -1,13 +1,13 @@
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import create_engine, desc, select, text
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import DATABASE_URL
-from app.db.models import AnalysisHistoryRow, AnalysisJobRow, Base
+from app.db.models import AnalysisHistoryRow, AnalysisJobRow, Base, SessionRow, UserRow
 from app.models.schemas import (
     ActionPlan,
     AnalysisHistoryDetail,
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class AnalysisJobRecord:
     job_id: str
+    user_id: int | None
     repo_url: str
     status: str
     progress: str
@@ -32,6 +33,23 @@ class AnalysisJobRecord:
     error: str | None
     created_at: str
     updated_at: str
+
+
+@dataclass(frozen=True)
+class UserRecord:
+    id: int
+    username: str
+    github_id: str | None
+    avatar_url: str | None
+    created_at: str
+
+
+@dataclass(frozen=True)
+class SessionRecord:
+    session_id: str
+    user_id: int
+    created_at: str
+    expires_at: str
 
 
 class AnalysisHistoryStore:
@@ -42,10 +60,68 @@ class AnalysisHistoryStore:
         self._Session = sessionmaker(self._engine)
         logger.info("Database initialized: %s", db_url.split("@")[-1])
 
-    def create_job(self, repo_url: str) -> AnalysisJobRecord:
+    def create_or_get_dev_user(self, username: str) -> UserRecord:
+        normalized = username.strip().lower()
+        if not normalized:
+            raise ValueError("Username is required.")
+
+        with self._Session() as session:
+            existing = session.execute(
+                select(UserRow).where(UserRow.username == normalized)
+            ).scalar_one_or_none()
+            if existing is not None:
+                return _user_record_from_row(existing)
+
+            row = UserRow(
+                username=normalized,
+                github_id=None,
+                avatar_url=None,
+                created_at=datetime.now(UTC).isoformat(),
+            )
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+            return _user_record_from_row(row)
+
+    def create_session(self, user_id: int) -> SessionRecord:
+        now = datetime.now(UTC)
+        row = SessionRow(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            created_at=now.isoformat(),
+            expires_at=(now + timedelta(days=14)).isoformat(),
+        )
+        with self._Session() as session:
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+            return _session_record_from_row(row)
+
+    def get_user_by_session(self, session_id: str | None) -> UserRecord | None:
+        if not session_id:
+            return None
+        now = datetime.now(UTC)
+        with self._Session() as session:
+            row = session.get(SessionRow, session_id)
+            if row is None or datetime.fromisoformat(row.expires_at) <= now:
+                return None
+            user = session.get(UserRow, row.user_id)
+            if user is None:
+                return None
+            return _user_record_from_row(user)
+
+    def delete_session(self, session_id: str) -> None:
+        with self._Session() as session:
+            row = session.get(SessionRow, session_id)
+            if row is not None:
+                session.delete(row)
+                session.commit()
+
+    def create_job(self, repo_url: str, user_id: int | None = None) -> AnalysisJobRecord:
         now = datetime.now(UTC).isoformat()
         row = AnalysisJobRow(
             id=str(uuid.uuid4()),
+            user_id=user_id,
             repo_url=repo_url,
             status="pending",
             progress="Queued...",
@@ -135,9 +211,11 @@ class AnalysisHistoryStore:
         mentor_feedback: MentorFeedback,
         action_plan: ActionPlan,
         github_metadata: GitHubMetadata,
+        user_id: int | None = None,
     ) -> AnalysisHistoryRecord:
         created_at = datetime.now(UTC).isoformat()
         row = AnalysisHistoryRow(
+            user_id=user_id,
             repo_url=repo_url,
             created_at=created_at,
             total_files=analysis.total_files,
@@ -172,13 +250,16 @@ class AnalysisHistoryStore:
             summary=report.summary,
         )
 
-    def list_recent(self, limit: int = 10) -> list[AnalysisHistoryRecord]:
+    def list_recent(self, limit: int = 10, user_id: int | None = None) -> list[AnalysisHistoryRecord]:
         with self._Session() as session:
+            statement = select(AnalysisHistoryRow)
+            if user_id is not None:
+                statement = statement.where(AnalysisHistoryRow.user_id == user_id)
+            else:
+                statement = statement.where(AnalysisHistoryRow.user_id.is_(None))
             rows = (
                 session.execute(
-                    select(AnalysisHistoryRow)
-                    .order_by(desc(AnalysisHistoryRow.id))
-                    .limit(limit)
+                    statement.order_by(desc(AnalysisHistoryRow.id)).limit(limit)
                 )
                 .scalars()
                 .all()
@@ -198,12 +279,13 @@ class AnalysisHistoryStore:
             for row in rows
         ]
 
-    def get_analysis(self, record_id: int) -> AnalysisHistoryDetail | None:
+    def get_analysis(self, record_id: int, user_id: int | None = None) -> AnalysisHistoryDetail | None:
         with self._Session() as session:
             row = session.get(AnalysisHistoryRow, record_id)
 
         if (
             row is None
+            or row.user_id != user_id
             or row.readiness_json is None
             or row.mentor_feedback_json is None
             or row.action_plan_json is None
@@ -227,6 +309,7 @@ class AnalysisHistoryStore:
 def _job_record_from_row(row: AnalysisJobRow) -> AnalysisJobRecord:
     return AnalysisJobRecord(
         job_id=row.id,
+        user_id=row.user_id,
         repo_url=row.repo_url,
         status=row.status,
         progress=row.progress,
@@ -234,4 +317,23 @@ def _job_record_from_row(row: AnalysisJobRow) -> AnalysisJobRecord:
         error=row.error,
         created_at=row.created_at,
         updated_at=row.updated_at,
+    )
+
+
+def _user_record_from_row(row: UserRow) -> UserRecord:
+    return UserRecord(
+        id=row.id,
+        username=row.username,
+        github_id=row.github_id,
+        avatar_url=row.avatar_url,
+        created_at=row.created_at,
+    )
+
+
+def _session_record_from_row(row: SessionRow) -> SessionRecord:
+    return SessionRecord(
+        session_id=row.id,
+        user_id=row.user_id,
+        created_at=row.created_at,
+        expires_at=row.expires_at,
     )

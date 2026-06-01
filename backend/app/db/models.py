@@ -10,6 +10,7 @@ class AnalysisHistoryRow(Base):
     __tablename__ = "analysis_history"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     repo_url: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[str] = mapped_column(String, nullable=False)
     total_files: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -29,6 +30,7 @@ class AnalysisJobRow(Base):
     __tablename__ = "analysis_jobs"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     repo_url: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False)
     progress: Mapped[str] = mapped_column(String, nullable=False)
@@ -36,3 +38,22 @@ class AnalysisJobRow(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[str] = mapped_column(String, nullable=False)
     updated_at: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class UserRow(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    github_id: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    avatar_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[str] = mapped_column(String, nullable=False)
+
+
+class SessionRow(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    created_at: Mapped[str] = mapped_column(String, nullable=False)
+    expires_at: Mapped[str] = mapped_column(String, nullable=False)

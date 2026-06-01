@@ -111,6 +111,12 @@ export type HistoryDetail = AnalyzeResponse & {
   created_at: string
 }
 
+export type CurrentUser = {
+  id: number
+  username: string
+  avatar_url: string | null
+}
+
 export type JobStatus = 'pending' | 'running' | 'done' | 'failed'
 
 export type JobStatusResponse = {

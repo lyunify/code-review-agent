@@ -5,6 +5,20 @@ class AnalyzeRequest(BaseModel):
     repo_url: HttpUrl = Field(..., description="Public GitHub repository URL to analyze.")
 
 
+class DevLoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=40)
+
+
+class CurrentUser(BaseModel):
+    id: int
+    username: str
+    avatar_url: str | None = None
+
+
+class CurrentUserResponse(BaseModel):
+    user: CurrentUser | None = None
+
+
 class FileMetric(BaseModel):
     path: str
     size_bytes: int

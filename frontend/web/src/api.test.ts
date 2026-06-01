@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { analyzeRepository, fetchHistoryRecord, getFriendlyErrorMessage, normalizeRepoUrl } from './api'
+import {
+  analyzeRepository,
+  devLogin,
+  fetchCurrentUser,
+  fetchHistoryRecord,
+  getFriendlyErrorMessage,
+  logout,
+  normalizeRepoUrl,
+} from './api'
 
 describe('normalizeRepoUrl', () => {
   it('adds https scheme when missing', () => {
@@ -57,7 +65,60 @@ describe('fetchHistoryRecord', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(fetchHistoryRecord(7)).resolves.toEqual(payload)
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/api/history/7')
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/api/history/7', {
+      credentials: 'include',
+    })
+  })
+})
+
+describe('auth API', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('fetches the current signed-in user', async () => {
+    const user = { id: 1, username: 'katy', avatar_url: null }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ user }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchCurrentUser()).resolves.toEqual(user)
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/api/auth/me', {
+      credentials: 'include',
+    })
+  })
+
+  it('creates a dev session with credentials included', async () => {
+    const user = { id: 1, username: 'katy', avatar_url: null }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ user }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(devLogin('katy')).resolves.toEqual(user)
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/api/auth/dev-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username: 'katy' }),
+    })
+  })
+
+  it('logs out the current session', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(logout()).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
   })
 })
 
