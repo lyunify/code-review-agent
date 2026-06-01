@@ -14,11 +14,14 @@ Students often know how to build class projects, but it is harder to judge wheth
 
 - Backend: FastAPI
 - Frontend: React, TypeScript, Vite
-- Data storage: SQLite
+- Data storage: SQLite for local development, PostgreSQL-ready via SQLAlchemy
+- Background jobs: Redis + RQ worker mode, with thread mode for simple local demos
+- Database migrations: Alembic
 - AI feedback: OpenAI API with rule-based fallback
 - Repository metadata: GitHub REST API
 - Legacy prototype: Streamlit
 - Core logic: Python services
+- Infrastructure: Docker Compose, health/readiness endpoints
 - Tests and CI: pytest, Vitest, GitHub Actions
 
 ## Architecture
@@ -32,12 +35,16 @@ React + TypeScript frontend
         v
 FastAPI backend
         |
+        |-- api: accepts analysis requests and exposes job status
+        |-- worker: runs repository analysis jobs
+        |-- Postgres/SQLite: saves job state and analysis history
+        |-- Redis/RQ: queues background analysis work in production mode
         |-- repo_loader: clones public GitHub repositories
         |-- analyzer: scans files, languages, README quality, tests, and risk signals
         |-- readiness: calculates checklist-based resume readiness scores
         |-- action_plan: generates prioritized improvement tasks
         |-- mentor_agent: creates AI mentor feedback with fallback logic
-        |-- db: saves and restores analysis history with SQLite
+        |-- db: saves and restores analysis history
 ```
 
 More details are available in [`docs/architecture.md`](docs/architecture.md).
@@ -147,6 +154,27 @@ source .venv/bin/activate
 uvicorn app.main:app --reload
 ```
 
+Apply database migrations when using a persistent local or deployed database:
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+```
+
+## Run Production-Style Backend Stack
+
+Docker Compose starts the API, worker, Postgres, and Redis services:
+
+```bash
+docker compose up --build
+```
+
+The API runs at `http://127.0.0.1:8000`. Useful health endpoints:
+
+- `GET /health/live`: process liveness.
+- `GET /health/ready`: database readiness.
+
 ## Run React Frontend
 
 In a second terminal:
@@ -170,6 +198,8 @@ cd frontend
 ## API Endpoints
 
 - `GET /health`: backend health check.
+- `GET /health/live`: liveness check for container orchestration.
+- `GET /health/ready`: readiness check for backend dependencies.
 - `POST /api/analyze`: enqueue a repository analysis job; returns `job_id`.
 - `GET /api/jobs/{job_id}`: poll job status (`pending` → `running` → `done` / `failed`); returns result when done.
 - `GET /api/history`: return recent saved analysis records.
@@ -178,6 +208,11 @@ cd frontend
 ## Engineering Notes
 
 - The backend keeps HTTP route handlers thin and places business logic in testable service modules.
+- Analysis jobs are persisted in the database so job status is not only an in-memory API concern.
+- Redis/RQ worker mode separates request handling from long-running repository analysis.
+- Alembic migrations make database schema changes explicit and reviewable.
+- Docker Compose provides a production-style local stack with API, worker, Postgres, and Redis.
+- `/health/live` and `/health/ready` separate process liveness from dependency readiness.
 - The readiness score is deterministic so results are explainable and repeatable.
 - GitHub metadata is treated as enrichment data; lookup failures fall back gracefully instead of failing the full analysis.
 - AI feedback is treated as an enhancement, not a hard dependency; local fallback logic keeps the app usable without an API key.
@@ -188,7 +223,7 @@ cd frontend
 ## Future Improvements
 
 - Expand GitHub API support with commit activity, pull request history, and repository health signals.
-- Add per-user saved reports and authentication.
+- Add per-user saved reports and GitHub OAuth authentication.
 - Support private repositories through secure GitHub OAuth.
 
 ## License
