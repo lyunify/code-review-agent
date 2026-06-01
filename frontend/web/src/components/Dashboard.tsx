@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck, ShieldCheck } from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
-import type { AnalyzeResponse, ArchitectureEdge, ArchitectureNode, ProjectIntelligence, StackEvidence, StackItem } from '../types'
+import type { AnalyzeResponse, ArchitectureEdge, ArchitectureNode, ProjectIntelligence, ReadinessChecklistItem, StackEvidence, StackItem } from '../types'
 import type { Tab } from '../uiTypes'
 import { Eyebrow, ScoreGauge, scoreBand, scoreGrade } from './Shared'
 
@@ -93,6 +93,8 @@ export function Dashboard({
           </div>
         ))}
 
+        <ProductionSignals result={result} />
+
         {/* bullets / tabs */}
         <div className="card b-tile b-bullets">
           <nav className="content-tabs">
@@ -141,22 +143,26 @@ export function Dashboard({
         <StackMap intelligence={intelligence} />
         <ArchitectureMap intelligence={intelligence} />
 
-        {/* github signals */}
         <div className="card b-tile b-signals">
-          <div className="panel-heading">
-            <Layers3 size={18} />
-            <h3>GitHub Profile Signals</h3>
-          </div>
-          <div className="metadata-grid">
-            <MetadataItem label="Description" value={result.github_metadata.description ? 'Present' : 'Missing'} />
-            <MetadataItem label="License" value={result.github_metadata.license_spdx_id ?? 'Missing'} />
-            <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
-            <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
-            <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
-            <MetadataItem label="Branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
-          </div>
-          <div style={{ marginTop: 18, display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="icon-btn" style={{ width: 'auto', padding: '0 16px', gap: 8, fontSize: 13, fontWeight: 600 }} onClick={handleDownloadReport}>
+          <details className="repo-metadata">
+            <summary>
+              <span>
+                <Layers3 size={16} />
+                Repo metadata
+              </span>
+              <small>GitHub profile signals, kept as supporting context</small>
+            </summary>
+            <div className="metadata-grid compact">
+              <MetadataItem label="Description" value={result.github_metadata.description ? 'Present' : 'Missing'} />
+              <MetadataItem label="License" value={result.github_metadata.license_spdx_id ?? 'Missing'} />
+              <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
+              <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
+              <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
+              <MetadataItem label="Branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
+            </div>
+          </details>
+          <div className="report-row">
+            <button className="icon-btn report-button" onClick={handleDownloadReport}>
               <Download size={14} />
               Report
             </button>
@@ -194,6 +200,86 @@ const FLOW_LABELS: Record<string, string> = {
 
 const FLOW_SEQUENCE = ['user', 'frontend', 'api', 'database']
 const ASYNC_SEQUENCE = ['api', 'queue', 'worker', 'external']
+
+const PRODUCTION_SIGNAL_GROUPS = [
+  {
+    label: 'Runnable',
+    description: 'Can another engineer clone, configure, and run it?',
+    checks: ['Dependency file exists', '.env.example exists', 'Deployment configuration exists'],
+  },
+  {
+    label: 'Quality',
+    description: 'Does it show automated engineering discipline?',
+    checks: ['Automated tests exist', 'CI workflow exists', 'Risk density is low'],
+  },
+  {
+    label: 'Full-stack',
+    description: 'Are frontend and backend connected as one product?',
+    checks: ['Frontend/backend boundaries are clear', 'Frontend calls backend API', 'API documentation exists'],
+  },
+  {
+    label: 'Operability',
+    description: 'Can someone understand and maintain the system shape?',
+    checks: ['Architecture docs exist', 'README includes setup instructions', 'README lists tech stack'],
+  },
+  {
+    label: 'Repo hygiene',
+    description: 'Basic public repository hygiene for review.',
+    checks: ['.gitignore exists', 'License file exists', 'README includes screenshots or demo assets'],
+  },
+]
+
+function ProductionSignals({ result }: { result: AnalyzeResponse }) {
+  const checklist = result.readiness.checklist
+  const groups = PRODUCTION_SIGNAL_GROUPS.map((group) => {
+    const items = group.checks.map((name) => checklist.find((item) => item.name === name)).filter((item): item is ReadinessChecklistItem => Boolean(item))
+    const passed = items.filter((item) => item.passed).length
+    return { ...group, items, passed, total: items.length }
+  })
+  const passedTotal = groups.reduce((sum, group) => sum + group.passed, 0)
+  const total = groups.reduce((sum, group) => sum + group.total, 0)
+  const architecture = result.analysis.project_intelligence?.architecture.summary ?? 'Static architecture inference is not available for this scan.'
+  const verdict = passedTotal >= Math.ceil(total * 0.75)
+    ? 'Production-shaped project'
+    : passedTotal >= Math.ceil(total * 0.5)
+      ? 'Promising, but still needs proof'
+      : 'Likely toy-project risk'
+
+  return (
+    <section className="card b-tile b-prod">
+      <div className="production-readout">
+        <div>
+          <div className="panel-heading">
+            <ShieldCheck size={18} />
+            <h3>Production Signals</h3>
+          </div>
+          <p>{verdict}</p>
+          <small>{architecture}</small>
+        </div>
+        <span className="production-score">
+          {passedTotal}/{total}
+          <small>signals</small>
+        </span>
+      </div>
+      <div className="production-grid">
+        {groups.map((group) => (
+          <article className={`signal-card ${group.passed === group.total ? 'strong' : group.passed > 0 ? 'partial' : 'weak'}`} key={group.label}>
+            <div className="signal-top">
+              <strong>{group.label}</strong>
+              <span>{group.passed}/{group.total}</span>
+            </div>
+            <p>{group.description}</p>
+            <div className="signal-dots" aria-label={`${group.passed} of ${group.total} production checks passed`}>
+              {group.items.map((item) => (
+                <i className={item.passed ? 'pass' : 'fail'} key={item.name} title={item.name} />
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function StackMap({ intelligence }: { intelligence: ProjectIntelligence }) {
   const groups = STACK_LAYERS.map((layer) => ({
