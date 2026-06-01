@@ -64,6 +64,9 @@ def test_analyze_repository_counts_languages_and_files(tmp_path: Path) -> None:
     assert result.project_intelligence.architecture.summary.startswith("Full-stack system")
     assert "frontend" in result.project_intelligence.architecture.mermaid
     assert "worker" in result.project_intelligence.architecture.mermaid
+    assert result.project_intelligence.toy_project_risk.level == "low"
+    assert result.project_intelligence.toy_project_risk.score >= 76
+    assert any(reason.title == "Persistent data layer" for reason in result.project_intelligence.toy_project_risk.reasons)
 
 
 def test_analyze_repository_flags_missing_project_hygiene(tmp_path: Path) -> None:
@@ -75,3 +78,5 @@ def test_analyze_repository_flags_missing_project_hygiene(tmp_path: Path) -> Non
     assert "Repository does not contain a README file." in risk_messages
     assert "Repository does not appear to contain tests." in risk_messages
     assert any("Long file detected" in message for message in risk_messages)
+    assert result.project_intelligence.toy_project_risk.level == "high"
+    assert any(reason.sentiment == "negative" for reason in result.project_intelligence.toy_project_risk.reasons)

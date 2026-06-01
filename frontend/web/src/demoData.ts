@@ -140,6 +140,21 @@ export function getDemoAnalysisResult(): AnalyzeResponse {
           mermaid:
             'flowchart LR\n  user["User"] -->|uses| frontend["Frontend app"]\n  frontend["Frontend app"] -->|calls API| api["API service"]\n  api["API service"] -->|persists data| database["PostgreSQL"]\n  api["API service"] -->|enqueues work| queue["Redis queue"]\n  queue["Redis queue"] -->|runs async jobs| worker["Background worker"]\n  worker["Background worker"] -->|fetches/enriches data| external["GitHub/OpenAI APIs"]',
         },
+        toy_project_risk: {
+          level: 'low',
+          label: 'Low toy-project risk',
+          summary:
+            'This reads like a production-shaped project: it has clear boundaries, runtime evidence, and engineering-quality signals an interviewer can inspect.',
+          confidence: 'high',
+          score: 92,
+          reasons: [
+            { title: 'Clear product boundaries', evidence: 'frontend/ and backend/ are separate surfaces', sentiment: 'positive' },
+            { title: 'Persistent data layer', evidence: 'docker-compose.yml and backend/app/db/database.py', sentiment: 'positive' },
+            { title: 'Background work path', evidence: 'backend/app/jobs.py and backend/app/worker.py', sentiment: 'positive' },
+            { title: 'Automated quality signal', evidence: 'backend pytest and frontend vitest coverage', sentiment: 'positive' },
+            { title: 'Demo polish still matters', evidence: 'README screenshots are still placeholders', sentiment: 'negative' },
+          ],
+        },
       },
     },
     github_metadata: {

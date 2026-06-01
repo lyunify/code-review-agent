@@ -68,9 +68,25 @@ class ArchitectureFlow(BaseModel):
     mermaid: str = ""
 
 
+class ToyRiskReason(BaseModel):
+    title: str
+    evidence: str
+    sentiment: str = "positive"
+
+
+class ToyProjectRisk(BaseModel):
+    level: str = "unknown"
+    label: str = "Not enough evidence"
+    summary: str = "Toy-project risk could not be inferred from this scan."
+    confidence: str = "low"
+    score: int = 0
+    reasons: list[ToyRiskReason] = Field(default_factory=list)
+
+
 class ProjectIntelligence(BaseModel):
     stack: list[StackItem] = Field(default_factory=list)
     architecture: ArchitectureFlow = Field(default_factory=ArchitectureFlow)
+    toy_project_risk: ToyProjectRisk = Field(default_factory=ToyProjectRisk)
 
 
 class RepositoryAnalysis(BaseModel):

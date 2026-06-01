@@ -22,6 +22,12 @@ export function generateMarkdownReport(result: AnalyzeResponse): string {
     : '- No risk signals found.'
   const topics = result.github_metadata.topics.length ? result.github_metadata.topics.join(', ') : 'None'
   const intelligence = result.analysis.project_intelligence
+  const toyRisk = intelligence?.toy_project_risk
+  const toyRiskReport = toyRisk
+    ? `**${toyRisk.label}** (${toyRisk.score}/100, ${toyRisk.confidence} confidence)\n\n${toyRisk.summary}\n\n${toyRisk.reasons
+        .map((reason) => `- ${reason.sentiment === 'negative' ? 'Watch' : 'Proof'}: ${reason.title} - ${reason.evidence}`)
+        .join('\n')}`
+    : 'No toy-project risk inference available.'
   const stackMap = intelligence?.stack.length
     ? intelligence.stack
         .map((item) => {
@@ -72,6 +78,10 @@ ${checklist}
 ## Technical Summary
 
 ${result.report.summary}
+
+## Toy Project Risk
+
+${toyRiskReport}
 
 ## Stack Map
 

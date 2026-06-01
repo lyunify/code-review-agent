@@ -47,9 +47,25 @@ export type ArchitectureFlow = {
   mermaid: string
 }
 
+export type ToyRiskReason = {
+  title: string
+  evidence: string
+  sentiment: 'positive' | 'negative' | string
+}
+
+export type ToyProjectRisk = {
+  level: 'low' | 'medium' | 'high' | 'unknown' | string
+  label: string
+  summary: string
+  confidence: string
+  score: number
+  reasons: ToyRiskReason[]
+}
+
 export type ProjectIntelligence = {
   stack: StackItem[]
   architecture: ArchitectureFlow
+  toy_project_risk?: ToyProjectRisk
 }
 
 export type RepositoryAnalysis = {

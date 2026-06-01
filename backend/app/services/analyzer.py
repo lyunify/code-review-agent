@@ -10,7 +10,7 @@ from app.core.config import (
     is_ignored_path,
 )
 from app.models.schemas import FileMetric, RepositoryAnalysis, RiskSignal
-from app.services.project_intelligence import infer_project_intelligence
+from app.services.project_intelligence import build_toy_project_risk, infer_project_intelligence
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +104,22 @@ def analyze_repository(repo_path: Path) -> RepositoryAnalysis:
     risks = _build_risks(files=files, has_readme=has_readme, has_tests=has_tests)
     has_frontend_backend_structure = {"frontend", "backend"}.issubset(top_level_directories)
     project_intelligence = infer_project_intelligence(root, files)
+    project_intelligence.toy_project_risk = build_toy_project_risk(
+        stack=project_intelligence.stack,
+        architecture=project_intelligence.architecture,
+        files=files,
+        total_directories=len(directory_paths),
+        risk_count=len(risks),
+        has_readme=has_readme,
+        has_tests=has_tests,
+        has_dependency_file=has_dependency_file,
+        has_env_example=has_env_example,
+        has_frontend_backend_structure=has_frontend_backend_structure,
+        has_deployment_config=has_deployment_config,
+        has_ci_config=has_ci_config,
+        has_api_documentation=has_api_documentation,
+        has_frontend_backend_integration=has_frontend_backend_integration,
+    )
 
     logger.info("Analysis complete: files=%d languages=%s risks=%d", len(files), list(languages.keys()), len(risks))
     return RepositoryAnalysis(

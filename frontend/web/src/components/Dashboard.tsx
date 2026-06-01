@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck, ShieldCheck, ShieldQuestion } from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
-import type { AnalyzeResponse, ArchitectureEdge, ArchitectureNode, ProjectIntelligence, ReadinessChecklistItem, StackEvidence, StackItem } from '../types'
+import type { AnalyzeResponse, ArchitectureEdge, ArchitectureNode, ProjectIntelligence, ReadinessChecklistItem, StackEvidence, StackItem, ToyProjectRisk } from '../types'
 import type { Tab } from '../uiTypes'
 import { Eyebrow, ScoreGauge, scoreBand, scoreGrade } from './Shared'
 
@@ -93,6 +93,7 @@ export function Dashboard({
           </div>
         ))}
 
+        <ToyRiskPanel intelligence={intelligence} readinessScore={result.readiness.score} riskCount={result.analysis.risks.length} />
         <ProductionSignals result={result} />
 
         {/* bullets / tabs */}
@@ -176,6 +177,14 @@ export function Dashboard({
 const EMPTY_INTELLIGENCE: ProjectIntelligence = {
   stack: [],
   architecture: { summary: 'No architecture inference available for this scan.', nodes: [], edges: [], mermaid: '' },
+  toy_project_risk: {
+    level: 'unknown',
+    label: 'Not enough evidence',
+    summary: 'Run a scan with repository structure, dependencies, and quality signals to infer toy-project risk.',
+    confidence: 'low',
+    score: 0,
+    reasons: [],
+  },
 }
 
 const STACK_LAYERS: Array<{ category: string; label: string; note: string }> = [
@@ -228,6 +237,75 @@ const PRODUCTION_SIGNAL_GROUPS = [
     checks: ['.gitignore exists', 'License file exists', 'README includes screenshots or demo assets'],
   },
 ]
+
+function ToyRiskPanel({
+  intelligence,
+  readinessScore,
+  riskCount,
+}: {
+  intelligence: ProjectIntelligence
+  readinessScore: number
+  riskCount: number
+}) {
+  const risk = intelligence.toy_project_risk ?? fallbackToyRisk(readinessScore, riskCount)
+  const proof = risk.reasons.filter((reason) => reason.sentiment !== 'negative').slice(0, 3)
+  const watch = risk.reasons.filter((reason) => reason.sentiment === 'negative').slice(0, 2)
+  const levelClass = `toy-${risk.level}`
+
+  return (
+    <section className={`card b-tile b-toy ${levelClass}`}>
+      <div className="toy-verdict">
+        <div className="panel-heading">
+          <ShieldQuestion size={18} />
+          <h3>Hiring Signal</h3>
+        </div>
+        <p>{risk.label}</p>
+        <small>{risk.summary}</small>
+      </div>
+      <div className="toy-scorecard">
+        <span>{risk.score}</span>
+        <small>risk confidence · {risk.confidence}</small>
+      </div>
+      <div className="toy-evidence">
+        <EvidenceColumn title="Proof an interviewer can inspect" items={proof} empty="No strong proof surfaced yet." />
+        <EvidenceColumn title="What may still read toy-like" items={watch} empty="No major toy-project caveats surfaced." />
+      </div>
+    </section>
+  )
+}
+
+function EvidenceColumn({ title, items, empty }: { title: string; items: ToyProjectRisk['reasons']; empty: string }) {
+  return (
+    <div className="toy-column">
+      <span>{title}</span>
+      {items.length ? (
+        items.map((item) => (
+          <p className={`toy-reason ${item.sentiment === 'negative' ? 'negative' : 'positive'}`} key={`${item.title}-${item.evidence}`}>
+            <strong>{item.title}</strong>
+            <em>{item.evidence}</em>
+          </p>
+        ))
+      ) : (
+        <p className="toy-empty">{empty}</p>
+      )}
+    </div>
+  )
+}
+
+function fallbackToyRisk(readinessScore: number, riskCount: number): ToyProjectRisk {
+  const level = readinessScore >= 76 ? 'low' : readinessScore >= 50 ? 'medium' : 'high'
+  return {
+    level,
+    label: level === 'low' ? 'Low toy-project risk' : level === 'medium' ? 'Medium toy-project risk' : 'High toy-project risk',
+    summary: 'This inference uses readiness score and visible risk count because detailed project intelligence is unavailable for this result.',
+    confidence: 'low',
+    score: readinessScore,
+    reasons: [
+      { title: 'Readiness score', evidence: `${readinessScore}/100`, sentiment: readinessScore >= 70 ? 'positive' : 'negative' },
+      { title: 'Risk count', evidence: `${riskCount} visible risk signals`, sentiment: riskCount <= 2 ? 'positive' : 'negative' },
+    ],
+  }
+}
 
 function ProductionSignals({ result }: { result: AnalyzeResponse }) {
   const checklist = result.readiness.checklist

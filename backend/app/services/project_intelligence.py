@@ -15,6 +15,8 @@ from app.models.schemas import (
     ProjectIntelligence,
     StackEvidence,
     StackItem,
+    ToyProjectRisk,
+    ToyRiskReason,
 )
 
 
@@ -67,6 +69,123 @@ def infer_project_intelligence(repo_path: Path, files: list[FileMetric]) -> Proj
     stack = _build_stack(evidence_by_tech)
     architecture = _build_architecture(stack=stack, files=files, repo_path=repo_path)
     return ProjectIntelligence(stack=stack, architecture=architecture)
+
+
+def build_toy_project_risk(
+    *,
+    stack: list[StackItem],
+    architecture: ArchitectureFlow,
+    files: list[FileMetric],
+    total_directories: int,
+    risk_count: int,
+    has_readme: bool,
+    has_tests: bool,
+    has_dependency_file: bool,
+    has_env_example: bool,
+    has_frontend_backend_structure: bool,
+    has_deployment_config: bool,
+    has_ci_config: bool,
+    has_api_documentation: bool,
+    has_frontend_backend_integration: bool,
+) -> ToyProjectRisk:
+    stack_names = {item.name for item in stack}
+    stack_categories = {item.category for item in stack}
+    node_kinds = {node.kind for node in architecture.nodes}
+    edge_labels = {edge.label for edge in architecture.edges}
+    has_persistence = "Database" in stack_categories or "database" in node_kinds
+    has_async_processing = bool({"Redis", "RQ", "Celery"} & stack_names) and "worker" in node_kinds
+    has_full_stack_shape = (
+        has_frontend_backend_structure
+        or ({"Frontend", "Backend"} <= stack_categories)
+        or bool({"frontend", "backend"} <= node_kinds)
+    )
+    has_api_flow = has_frontend_backend_integration or "calls API" in edge_labels
+    has_runtime_shape = has_deployment_config or bool({"Docker", "Docker Compose"} & stack_names)
+    has_quality_shape = has_tests or has_ci_config or bool({"Pytest", "Vitest", "GitHub Actions", "Ruff", "Mypy"} & stack_names)
+
+    score = 0
+    reasons: list[ToyRiskReason] = []
+
+    def reward(points: int, title: str, evidence: str) -> None:
+        nonlocal score
+        score += points
+        reasons.append(ToyRiskReason(title=title, evidence=evidence, sentiment="positive"))
+
+    def penalty(points: int, title: str, evidence: str) -> None:
+        nonlocal score
+        score -= points
+        reasons.append(ToyRiskReason(title=title, evidence=evidence, sentiment="negative"))
+
+    if has_full_stack_shape:
+        reward(18, "Clear product boundaries", _first_path(files, {"frontend", "backend", "web", "api"}))
+    else:
+        penalty(18, "Single-surface structure", "No separate frontend/backend boundary inferred")
+
+    if has_api_flow:
+        reward(14, "Frontend-to-API integration", _frontend_api_evidence(files))
+    elif has_full_stack_shape:
+        penalty(12, "Integration proof is thin", "Frontend/backend folders exist, but no API call evidence was found")
+
+    if has_persistence:
+        reward(14, "Persistent data layer", _first_stack_evidence(stack, {"PostgreSQL", "SQLite", "MongoDB", "SQLAlchemy"}))
+    else:
+        penalty(14, "No persistence signal", "No database, ORM, or migration evidence found")
+
+    if has_async_processing:
+        reward(10, "Background work path", _first_path(files, {"worker", "jobs", "tasks", "queue"}))
+    if has_runtime_shape:
+        reward(12, "Runnable deployment shape", _first_stack_evidence(stack, {"Docker Compose", "Docker"}))
+    else:
+        penalty(10, "Runtime story is missing", "No Docker, compose, or deployment config found")
+
+    if has_quality_shape:
+        reward(14, "Automated quality signal", _first_stack_evidence(stack, {"Pytest", "Vitest", "GitHub Actions", "Ruff", "Mypy"}))
+    else:
+        penalty(16, "No automated quality proof", "No tests, lint, type check, or CI signal found")
+
+    if has_readme and has_dependency_file and has_env_example:
+        reward(10, "Clone-and-run evidence", ".env.example and dependency manifests are present")
+    elif not has_readme:
+        penalty(10, "No README context", "README is missing")
+    elif not has_dependency_file:
+        penalty(8, "Dependencies are not declared", "No dependency manifest found")
+    elif not has_env_example:
+        penalty(5, "Configuration is not reviewable", ".env.example is missing")
+
+    if has_api_documentation:
+        reward(6, "API is explainable", "API documentation or endpoint examples found")
+    if risk_count >= max(3, len(files) // 12):
+        penalty(8, "Risk density is noticeable", f"{risk_count} risk signals across {len(files)} files")
+    if len(files) <= 3 or total_directories <= 1:
+        penalty(14, "Very small repository footprint", f"{len(files)} files across {total_directories} directories")
+
+    normalized = max(0, min(100, 50 + score))
+    if normalized >= 76:
+        level = "low"
+        label = "Low toy-project risk"
+        summary = "This reads like a production-shaped project: it has clear boundaries, runtime evidence, and engineering-quality signals an interviewer can inspect."
+    elif normalized >= 50:
+        level = "medium"
+        label = "Medium toy-project risk"
+        summary = "The project has useful engineering signals, but an interviewer may still look for stronger proof around integration, runtime, or tests."
+    else:
+        level = "high"
+        label = "High toy-project risk"
+        summary = "This may be perceived as a toy project because core production signals are missing or not visible from the repository."
+
+    confidence = "high" if len(reasons) >= 5 else "medium" if len(reasons) >= 3 else "low"
+    positive = [reason for reason in reasons if reason.sentiment == "positive"]
+    negative = [reason for reason in reasons if reason.sentiment == "negative"]
+    ordered_reasons = (positive[:3] + negative[:3])[:5]
+
+    return ToyProjectRisk(
+        level=level,
+        label=label,
+        summary=summary,
+        confidence=confidence,
+        score=normalized,
+        reasons=ordered_reasons,
+    )
 
 
 def _collect_tech_evidence(repo_path: Path) -> dict[str, list[StackEvidence]]:
