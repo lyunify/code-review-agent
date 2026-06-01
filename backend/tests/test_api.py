@@ -85,6 +85,19 @@ def test_analyze_returns_job_id_immediately(monkeypatch, tmp_path: Path) -> None
     assert len(payload["job_id"]) == 36  # UUID4
 
 
+def test_analyze_rejects_non_github_urls(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "app.api.routes.history_store",
+        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+    )
+
+    client = TestClient(app)
+    response = client.post("/api/analyze", json={"repo_url": "https://example.com/demo"})
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Only public GitHub repository URLs are supported."
+
+
 def test_health_live_returns_ok() -> None:
     client = TestClient(app)
 
@@ -237,6 +250,25 @@ def test_job_status_completes_with_full_result(monkeypatch, tmp_path: Path) -> N
     assert result["result"]["analysis"]["total_files"] >= 1
     assert result["result"]["readiness"]["score"] >= 90
     assert result["result"]["github_metadata"]["license_spdx_id"] == "MIT"
+
+
+def test_job_status_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> None:
+    db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    monkeypatch.setattr("app.api.routes.history_store", db_store)
+    monkeypatch.setattr("app.api.routes.start_analysis_thread", lambda **kwargs: None)
+    alice = TestClient(app)
+    bob = TestClient(app)
+    alice.post("/api/auth/dev-login", json={"username": "alice"})
+    bob.post("/api/auth/dev-login", json={"username": "bob"})
+
+    job_id = alice.post(
+        "/api/analyze", json={"repo_url": "https://github.com/example/demo"}
+    ).json()["job_id"]
+
+    assert alice.get(f"/api/jobs/{job_id}").status_code == 200
+    bob_response = bob.get(f"/api/jobs/{job_id}")
+    assert bob_response.status_code == 404
+    assert bob_response.json()["detail"] == "Job not found"
 
 
 def test_job_fails_when_repo_too_large(monkeypatch, tmp_path: Path) -> None:

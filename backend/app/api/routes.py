@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
@@ -73,6 +74,11 @@ def logout(request: Request, response: Response) -> dict[str, bool]:
 @router.post("/analyze", response_model=JobCreatedResponse)
 def analyze_repo(request: AnalyzeRequest, http_request: Request) -> JobCreatedResponse:
     repo_url = str(request.repo_url).rstrip("/")
+    if not _is_supported_github_url(repo_url):
+        raise HTTPException(
+            status_code=400,
+            detail="Only public GitHub repository URLs are supported.",
+        )
     job_id = create_job(
         history_store=history_store,
         repo_url=repo_url,
@@ -84,7 +90,11 @@ def analyze_repo(request: AnalyzeRequest, http_request: Request) -> JobCreatedRe
 
 
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
-def get_job_status(job_id: str) -> JobStatusResponse:
+def get_job_status(job_id: str, request: Request) -> JobStatusResponse:
+    record = history_store.get_job(job_id)
+    if record is None or record.user_id != _current_user_id(request):
+        raise HTTPException(status_code=404, detail="Job not found")
+
     job = get_job(job_id, history_store=history_store)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -95,6 +105,11 @@ def get_job_status(job_id: str) -> JobStatusResponse:
         result=job.result,
         error=job.error,
     )
+
+
+def _is_supported_github_url(repo_url: str) -> bool:
+    parsed = urlparse(repo_url)
+    return parsed.scheme in {"http", "https"} and parsed.hostname == "github.com"
 
 
 @router.get("/history", response_model=AnalysisHistoryResponse)
