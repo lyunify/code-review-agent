@@ -2,6 +2,7 @@ import shutil
 import time
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.db.database import AnalysisHistoryStore
@@ -14,6 +15,21 @@ from app.models.schemas import (
     ResumeReadiness,
     ReviewReport,
 )
+
+
+class _AllowingRateLimiter:
+    def allow(self, subject: str) -> bool:
+        return True
+
+
+class _DenyingRateLimiter:
+    def allow(self, subject: str) -> bool:
+        return False
+
+
+@pytest.fixture(autouse=True)
+def _use_allowing_rate_limiter(monkeypatch) -> None:
+    monkeypatch.setattr("app.api.routes.rate_limiter", _AllowingRateLimiter())
 
 
 def _make_repo(tmp_path: Path) -> Path:
@@ -75,6 +91,7 @@ def test_analyze_returns_job_id_immediately(monkeypatch, tmp_path: Path) -> None
         "app.api.routes.history_store",
         AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
     )
+    monkeypatch.setattr("app.api.routes.rate_limiter", _AllowingRateLimiter())
 
     client = TestClient(app)
     response = client.post("/api/analyze", json={"repo_url": "https://github.com/example/demo"})
@@ -86,16 +103,38 @@ def test_analyze_returns_job_id_immediately(monkeypatch, tmp_path: Path) -> None
 
 
 def test_analyze_rejects_non_github_urls(monkeypatch, tmp_path: Path) -> None:
+    db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
     monkeypatch.setattr(
         "app.api.routes.history_store",
-        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+        db_store,
     )
+    monkeypatch.setattr("app.api.routes.rate_limiter", _AllowingRateLimiter())
 
     client = TestClient(app)
     response = client.post("/api/analyze", json={"repo_url": "https://example.com/demo"})
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Only public GitHub repository URLs are supported."
+    events = db_store.list_audit_events()
+    assert events[0].event_type == "analysis_rejected"
+    assert events[0].metadata["reason"] == "unsupported_repo_host"
+
+
+def test_analyze_returns_429_when_rate_limit_is_exceeded(monkeypatch, tmp_path: Path) -> None:
+    db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    monkeypatch.setattr("app.api.routes.history_store", db_store)
+    monkeypatch.setattr("app.api.routes.rate_limiter", _DenyingRateLimiter())
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/analyze", json={"repo_url": "https://github.com/example/demo"}
+    )
+
+    assert response.status_code == 429
+    assert response.json()["detail"] == "Analyze rate limit exceeded. Please try again later."
+    events = db_store.list_audit_events()
+    assert events[0].event_type == "analysis_rejected"
+    assert events[0].metadata["reason"] == "rate_limited"
 
 
 def test_health_live_returns_ok() -> None:
@@ -129,9 +168,10 @@ def test_root_endpoint_lists_backend_entrypoints() -> None:
 
 
 def test_dev_login_me_and_logout_use_session_cookie(monkeypatch, tmp_path: Path) -> None:
+    db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
     monkeypatch.setattr(
         "app.api.routes.history_store",
-        AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db"),
+        db_store,
     )
     client = TestClient(app)
 
@@ -148,6 +188,8 @@ def test_dev_login_me_and_logout_use_session_cookie(monkeypatch, tmp_path: Path)
     assert logout_response.status_code == 200
     assert logout_response.json() == {"ok": True}
     assert client.get("/api/auth/me").json() == {"user": None}
+    event_types = [event.event_type for event in db_store.list_audit_events(limit=10)]
+    assert event_types == ["logout", "login"]
 
 
 def test_history_endpoint_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> None:
@@ -256,6 +298,7 @@ def test_job_status_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> No
     db_store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
     monkeypatch.setattr("app.api.routes.history_store", db_store)
     monkeypatch.setattr("app.api.routes.start_analysis_thread", lambda **kwargs: None)
+    monkeypatch.setattr("app.api.routes.rate_limiter", _AllowingRateLimiter())
     alice = TestClient(app)
     bob = TestClient(app)
     alice.post("/api/auth/dev-login", json={"username": "alice"})
@@ -269,6 +312,9 @@ def test_job_status_is_scoped_to_current_user(monkeypatch, tmp_path: Path) -> No
     bob_response = bob.get(f"/api/jobs/{job_id}")
     assert bob_response.status_code == 404
     assert bob_response.json()["detail"] == "Job not found"
+    events = db_store.list_audit_events(limit=10)
+    assert events[0].event_type == "job_view_denied"
+    assert events[0].metadata["job_id"] == job_id
 
 
 def test_job_fails_when_repo_too_large(monkeypatch, tmp_path: Path) -> None:

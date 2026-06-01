@@ -55,6 +55,10 @@ def is_ignored_path(path: Path) -> bool:
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./analysis_history.db")
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 ANALYSIS_QUEUE_BACKEND: str = os.getenv("ANALYSIS_QUEUE_BACKEND", "thread")
+ANALYZE_RATE_LIMIT: int = int(os.getenv("ANALYZE_RATE_LIMIT", "5"))
+ANALYZE_RATE_LIMIT_WINDOW_SECONDS: int = int(
+    os.getenv("ANALYZE_RATE_LIMIT_WINDOW_SECONDS", "600")
+)
 
 
 def _parse_origins(raw: str) -> list[str]:

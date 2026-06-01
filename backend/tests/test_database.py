@@ -203,6 +203,26 @@ def test_user_sessions_and_history_are_user_scoped(tmp_path: Path) -> None:
     assert store.get_user_by_session(session.session_id) is None
 
 
+def test_audit_events_are_persisted_with_metadata(tmp_path: Path) -> None:
+    store = AnalysisHistoryStore(f"sqlite:///{tmp_path}/history.db")
+    user = store.create_or_get_dev_user("alice")
+
+    event = store.record_audit_event(
+        event_type="analysis_started",
+        user_id=user.id,
+        actor="user:1",
+        metadata={"repo_url": "https://github.com/example/demo"},
+    )
+    events = store.list_audit_events(limit=5)
+
+    assert event.id == 1
+    assert len(events) == 1
+    assert events[0].event_type == "analysis_started"
+    assert events[0].user_id == user.id
+    assert events[0].actor == "user:1"
+    assert events[0].metadata == {"repo_url": "https://github.com/example/demo"}
+
+
 def test_alembic_initial_schema_creates_tables(tmp_path: Path) -> None:
     db_url = f"sqlite:///{tmp_path}/migration.db"
     config = Config("alembic.ini")
@@ -212,7 +232,14 @@ def test_alembic_initial_schema_creates_tables(tmp_path: Path) -> None:
 
     engine = create_engine(db_url)
     tables = set(inspect(engine).get_table_names())
-    assert {"analysis_history", "analysis_jobs", "users", "sessions", "alembic_version"}.issubset(tables)
+    assert {
+        "analysis_history",
+        "analysis_jobs",
+        "users",
+        "sessions",
+        "audit_events",
+        "alembic_version",
+    }.issubset(tables)
     history_columns = {column["name"] for column in inspect(engine).get_columns("analysis_history")}
     job_columns = {column["name"] for column in inspect(engine).get_columns("analysis_jobs")}
     assert "user_id" in history_columns

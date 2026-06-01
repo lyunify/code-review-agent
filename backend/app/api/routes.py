@@ -15,10 +15,12 @@ from app.models.schemas import (
     JobCreatedResponse,
     JobStatusResponse,
 )
+from app.services.rate_limiter import RedisRateLimiter
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["analysis"])
 history_store = AnalysisHistoryStore()
+rate_limiter = RedisRateLimiter()
 SESSION_COOKIE_NAME = "repo_ready_session"
 
 
@@ -29,6 +31,14 @@ def _current_user(request: Request) -> UserRecord | None:
 def _current_user_id(request: Request) -> int | None:
     user = _current_user(request)
     return user.id if user else None
+
+
+def _actor_for_request(request: Request, user: UserRecord | None = None) -> str:
+    current = user if user is not None else _current_user(request)
+    if current is not None:
+        return f"user:{current.id}"
+    client_host = request.client.host if request.client else "unknown"
+    return f"ip:{client_host}"
 
 
 def _current_user_response(user: UserRecord | None) -> CurrentUserResponse:
@@ -44,9 +54,19 @@ def _current_user_response(user: UserRecord | None) -> CurrentUserResponse:
 
 
 @router.post("/auth/dev-login", response_model=CurrentUserResponse)
-def dev_login(request: DevLoginRequest, response: Response) -> CurrentUserResponse:
+def dev_login(
+    request: DevLoginRequest,
+    response: Response,
+    http_request: Request,
+) -> CurrentUserResponse:
     user = history_store.create_or_get_dev_user(request.username)
     session = history_store.create_session(user.id)
+    history_store.record_audit_event(
+        event_type="login",
+        user_id=user.id,
+        actor=_actor_for_request(http_request, user=user),
+        metadata={"username": user.username},
+    )
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=session.session_id,
@@ -64,9 +84,16 @@ def get_current_user(request: Request) -> CurrentUserResponse:
 
 @router.post("/auth/logout")
 def logout(request: Request, response: Response) -> dict[str, bool]:
+    user = _current_user(request)
     session_id = request.cookies.get(SESSION_COOKIE_NAME)
     if session_id:
         history_store.delete_session(session_id)
+    history_store.record_audit_event(
+        event_type="logout",
+        user_id=user.id if user else None,
+        actor=_actor_for_request(request, user=user),
+        metadata={},
+    )
     response.delete_cookie(SESSION_COOKIE_NAME)
     return {"ok": True}
 
@@ -74,15 +101,40 @@ def logout(request: Request, response: Response) -> dict[str, bool]:
 @router.post("/analyze", response_model=JobCreatedResponse)
 def analyze_repo(request: AnalyzeRequest, http_request: Request) -> JobCreatedResponse:
     repo_url = str(request.repo_url).rstrip("/")
+    user_id = _current_user_id(http_request)
+    actor = _actor_for_request(http_request)
     if not _is_supported_github_url(repo_url):
+        history_store.record_audit_event(
+            event_type="analysis_rejected",
+            user_id=user_id,
+            actor=actor,
+            metadata={"repo_url": repo_url, "reason": "unsupported_repo_host"},
+        )
         raise HTTPException(
             status_code=400,
             detail="Only public GitHub repository URLs are supported.",
         )
+    if not rate_limiter.allow(actor):
+        history_store.record_audit_event(
+            event_type="analysis_rejected",
+            user_id=user_id,
+            actor=actor,
+            metadata={"repo_url": repo_url, "reason": "rate_limited"},
+        )
+        raise HTTPException(
+            status_code=429,
+            detail="Analyze rate limit exceeded. Please try again later.",
+        )
     job_id = create_job(
         history_store=history_store,
         repo_url=repo_url,
-        user_id=_current_user_id(http_request),
+        user_id=user_id,
+    )
+    history_store.record_audit_event(
+        event_type="analysis_started",
+        user_id=user_id,
+        actor=actor,
+        metadata={"repo_url": repo_url, "job_id": job_id},
     )
     logger.info("Job created: job_id=%s repo=%s", job_id, repo_url)
     start_analysis_thread(job_id=job_id, repo_url=repo_url, history_store=history_store)
@@ -92,7 +144,15 @@ def analyze_repo(request: AnalyzeRequest, http_request: Request) -> JobCreatedRe
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
 def get_job_status(job_id: str, request: Request) -> JobStatusResponse:
     record = history_store.get_job(job_id)
-    if record is None or record.user_id != _current_user_id(request):
+    current_user_id = _current_user_id(request)
+    if record is None or record.user_id != current_user_id:
+        if record is not None:
+            history_store.record_audit_event(
+                event_type="job_view_denied",
+                user_id=current_user_id,
+                actor=_actor_for_request(request),
+                metadata={"job_id": job_id, "owner_user_id": record.user_id},
+            )
         raise HTTPException(status_code=404, detail="Job not found")
 
     job = get_job(job_id, history_store=history_store)

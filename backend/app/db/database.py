@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from dataclasses import dataclass
@@ -7,7 +8,14 @@ from sqlalchemy import create_engine, desc, select, text
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import DATABASE_URL
-from app.db.models import AnalysisHistoryRow, AnalysisJobRow, Base, SessionRow, UserRow
+from app.db.models import (
+    AnalysisHistoryRow,
+    AnalysisJobRow,
+    AuditEventRow,
+    Base,
+    SessionRow,
+    UserRow,
+)
 from app.models.schemas import (
     ActionPlan,
     AnalysisHistoryDetail,
@@ -50,6 +58,16 @@ class SessionRecord:
     user_id: int
     created_at: str
     expires_at: str
+
+
+@dataclass(frozen=True)
+class AuditEventRecord:
+    id: int
+    event_type: str
+    user_id: int | None
+    actor: str
+    metadata: dict[str, object]
+    created_at: str
 
 
 class AnalysisHistoryStore:
@@ -116,6 +134,37 @@ class AnalysisHistoryStore:
             if row is not None:
                 session.delete(row)
                 session.commit()
+
+    def record_audit_event(
+        self,
+        event_type: str,
+        user_id: int | None,
+        actor: str,
+        metadata: dict[str, object] | None = None,
+    ) -> AuditEventRecord:
+        row = AuditEventRow(
+            event_type=event_type,
+            user_id=user_id,
+            actor=actor,
+            metadata_json=json.dumps(metadata or {}, sort_keys=True),
+            created_at=datetime.now(UTC).isoformat(),
+        )
+        with self._Session() as session:
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+            return _audit_event_record_from_row(row)
+
+    def list_audit_events(self, limit: int = 20) -> list[AuditEventRecord]:
+        with self._Session() as session:
+            rows = (
+                session.execute(
+                    select(AuditEventRow).order_by(desc(AuditEventRow.id)).limit(limit)
+                )
+                .scalars()
+                .all()
+            )
+        return [_audit_event_record_from_row(row) for row in rows]
 
     def create_job(self, repo_url: str, user_id: int | None = None) -> AnalysisJobRecord:
         now = datetime.now(UTC).isoformat()
@@ -336,4 +385,15 @@ def _session_record_from_row(row: SessionRow) -> SessionRecord:
         user_id=row.user_id,
         created_at=row.created_at,
         expires_at=row.expires_at,
+    )
+
+
+def _audit_event_record_from_row(row: AuditEventRow) -> AuditEventRecord:
+    return AuditEventRecord(
+        id=row.id,
+        event_type=row.event_type,
+        user_id=row.user_id,
+        actor=row.actor,
+        metadata=dict(json.loads(row.metadata_json)),
+        created_at=row.created_at,
     )
