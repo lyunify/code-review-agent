@@ -24,6 +24,7 @@ import type { Tab, View } from './uiTypes'
 
 const SAMPLE_REPO_URL = 'https://github.com/lyunify/repo-ready'
 const THEME_KEY = 'repo-ready-theme'
+type Theme = 'ivory' | 'dark'
 
 function App() {
   const [repoUrl, setRepoUrl] = useState(SAMPLE_REPO_URL)
@@ -37,16 +38,18 @@ function App() {
   const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
-  const [theme, setTheme] = useState<string>(
-    () => (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || '',
-  )
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof localStorage === 'undefined') return 'ivory'
+    const savedTheme = localStorage.getItem(THEME_KEY)
+    return savedTheme === 'dark' || savedTheme === 'ivory' ? savedTheme : 'ivory'
+  })
 
   useEffect(() => {
     refreshSessionState()
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
+    document.documentElement.dataset.theme = theme === 'ivory' ? 'ivory' : ''
     if (typeof localStorage !== 'undefined') localStorage.setItem(THEME_KEY, theme)
   }, [theme])
 
@@ -163,7 +166,7 @@ function App() {
           />
           <button
             className="icon-btn"
-            onClick={() => setTheme((t) => (t === 'ivory' ? '' : 'ivory'))}
+            onClick={() => setTheme((t) => (t === 'ivory' ? 'dark' : 'ivory'))}
             aria-label="Toggle light / dark theme"
             title={theme === 'ivory' ? 'Switch to dark' : 'Switch to light'}
           >
