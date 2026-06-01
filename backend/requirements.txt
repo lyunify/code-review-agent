@@ -14,3 +14,4 @@ mypy==1.16.0
 types-requests==2.32.0.20250515
 sqlalchemy==2.0.41
 psycopg2-binary==2.9.10
+alembic==1.17.2

@@ -1,5 +1,9 @@
 from pathlib import Path
 
+from sqlalchemy import create_engine, inspect
+
+from alembic import command
+from alembic.config import Config
 from app.db.database import AnalysisHistoryStore
 from app.models.schemas import (
     ActionPlan,
@@ -137,3 +141,15 @@ def test_job_store_persists_failed_status(tmp_path: Path) -> None:
     assert fetched is not None
     assert fetched.status == "failed"
     assert fetched.error == "Repository is too large"
+
+
+def test_alembic_initial_schema_creates_tables(tmp_path: Path) -> None:
+    db_url = f"sqlite:///{tmp_path}/migration.db"
+    config = Config("alembic.ini")
+    config.set_main_option("sqlalchemy.url", db_url)
+
+    command.upgrade(config, "head")
+
+    engine = create_engine(db_url)
+    tables = set(inspect(engine).get_table_names())
+    assert {"analysis_history", "analysis_jobs", "alembic_version"}.issubset(tables)
