@@ -103,7 +103,7 @@ export function Dashboard({
               className={`content-tab${activeTab === 'resume' ? ' active' : ''}`}
               onClick={() => onTabChange('resume')}
             >
-              Resume bullets
+              Resume proof
             </button>
             <button
               className={`content-tab${activeTab === 'interview' ? ' active' : ''}`}

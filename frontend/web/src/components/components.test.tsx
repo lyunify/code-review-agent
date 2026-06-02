@@ -210,22 +210,22 @@ describe('Dashboard', () => {
 describe('EmptyWorkbench', () => {
   it('renders default message with no history', () => {
     render(<EmptyWorkbench history={[]} activeView="dashboard" onTrySampleRepo={vi.fn()} />)
-    expect(screen.getByText(/Run a repository review to generate the workspace/)).toBeDefined()
+    expect(screen.getByText(/ready for your internship resume/)).toBeDefined()
   })
 
   it('shows rubric message for rubric view', () => {
     render(<EmptyWorkbench history={[]} activeView="rubric" onTrySampleRepo={vi.fn()} />)
-    expect(screen.getByText('Run a repository review to inspect the readiness rubric.')).toBeDefined()
+    expect(screen.getByText('Check the rubric behind the resume-readiness verdict.')).toBeDefined()
   })
 
   it('shows action plan message for action view', () => {
     render(<EmptyWorkbench history={[]} activeView="action" onTrySampleRepo={vi.fn()} />)
-    expect(screen.getByText('Run a repository review to generate a prioritized action plan.')).toBeDefined()
+    expect(screen.getByText('Turn weak repo signals into a focused fix plan.')).toBeDefined()
   })
 
   it('shows mentor message for mentor view', () => {
     render(<EmptyWorkbench history={[]} activeView="mentor" onTrySampleRepo={vi.fn()} />)
-    expect(screen.getByText(/AI mentor feedback/)).toBeDefined()
+    expect(screen.getByText(/explain this project in an interview/)).toBeDefined()
   })
 
   it('shows history count when history exists', () => {
@@ -333,7 +333,7 @@ describe('Sidebar', () => {
         onSelectHistory={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByText('AI mentor'))
+    fireEvent.click(screen.getByText('Interview prep'))
     expect(onViewChange).toHaveBeenCalledWith('mentor')
   })
 

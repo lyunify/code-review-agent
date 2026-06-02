@@ -1,4 +1,4 @@
-import { FileText, Gauge, Github, ListChecks, Sparkles } from 'lucide-react'
+import { FileText, Gauge, Github, ListChecks, ShieldCheck } from 'lucide-react'
 import type { HistoryRecord } from '../types'
 import type { View } from '../uiTypes'
 
@@ -13,21 +13,21 @@ export function EmptyWorkbench({
 }) {
   const title =
     activeView === 'rubric'
-      ? 'Run a repository review to inspect the readiness rubric.'
+      ? 'Check the rubric behind the resume-readiness verdict.'
       : activeView === 'action'
-        ? 'Run a repository review to generate a prioritized action plan.'
+        ? 'Turn weak repo signals into a focused fix plan.'
         : activeView === 'mentor'
-          ? 'Run a repository review to generate AI mentor feedback.'
-          : 'Run a repository review to generate the workspace.'
+          ? 'Prepare to explain this project in an interview.'
+          : 'Find out if this project is ready for your internship resume.'
 
   return (
     <section className="empty-workbench">
       <div className="empty-card">
-        <Sparkles size={30} />
+        <ShieldCheck size={30} />
         <h2>{title}</h2>
         <p>
-          Start with a public GitHub repository to generate a readiness score, prioritized action plan, resume bullets,
-          interview prep, and a saved report you can revisit later.
+          Start with a public GitHub repository to inspect production signals, toy-project risk, resume proof,
+          prioritized fixes, and interview talking points.
         </p>
         <div className="empty-actions">
           <button onClick={onTrySampleRepo}>
@@ -38,13 +38,13 @@ export function EmptyWorkbench({
         <div className="empty-feature-grid">
           <div>
             <Gauge size={19} />
-            <strong>Score</strong>
-            <span>Resume-readiness rubric</span>
+            <strong>Verdict</strong>
+            <span>Resume readiness and toy-project risk</span>
           </div>
           <div>
             <ListChecks size={19} />
             <strong>Action plan</strong>
-            <span>Prioritized next fixes</span>
+            <span>Evidence-backed next fixes</span>
           </div>
           <div>
             <FileText size={19} />

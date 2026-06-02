@@ -4,11 +4,11 @@
 
 **Live demo:** [www.repo-ready.com](https://www.repo-ready.com)
 
-Repo Ready is a full-stack repository readiness platform for CS students preparing for SDE internship applications. It analyzes a public GitHub project, scores whether the repo is resume-ready, generates prioritized fixes, and turns technical signals into resume bullets and interview talking points.
+Repo Ready is a full-stack repository readiness tool for CS students preparing for SDE internship applications. It analyzes a public GitHub project, explains whether it looks resume-ready, surfaces toy-project risk, and turns concrete repo evidence into prioritized fixes, resume proof, and interview talking points.
 
 ## Why This Project Exists
 
-Students often build projects but struggle to judge whether a repository is strong enough for a resume or technical interview. Repo Ready gives a concrete answer by checking documentation, tests, structure, dependency files, deployment signals, risk signals, GitHub metadata, and end-to-end project polish.
+Students often build projects but struggle to judge whether a repository is strong enough for a resume or technical interview. Repo Ready gives a concrete answer by checking documentation, tests, structure, dependency files, deployment signals, frontend/backend integration, toy-project risk, and end-to-end project polish.
 
 ## Production Backend Highlights
 
@@ -63,7 +63,7 @@ More detail: [docs/architecture.md](docs/architecture.md)
 - Inspect languages, file counts, directories, largest files, docs, tests, dependency manifests, CI, deployment config, and risk signals.
 - Enrich reports with GitHub metadata such as description, topics, license, homepage, and fork status.
 - Generate prioritized action plans with why/how/resume-impact explanations.
-- Generate AI mentor feedback, resume bullets, STAR-style interview questions, and next steps.
+- Generate resume bullets, STAR-style interview questions, and next steps from repository evidence.
 - Save and reopen analysis history.
 - Export a Markdown readiness report.
 - Track background job progress through a persisted timeline.
@@ -96,7 +96,7 @@ The rubric keeps the score explainable by separating deterministic checklist sig
 
 ### Interview Coach
 
-The mentor view converts repository analysis into resume bullets, interview questions, STAR-style talking points, and follow-up work that a student can actually use.
+The interview prep view converts repository analysis into resume bullets, interview questions, STAR-style talking points, and follow-up work that a student can actually use.
 
 ![Interview Coach](docs/screenshots/04-interview-coach.png)
 
@@ -151,7 +151,7 @@ OPENAI_API_KEY=your_api_key_here
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-The app still works without an OpenAI key because mentor feedback has a local fallback.
+The app still works without an OpenAI key because interview feedback has a local fallback.
 
 ## API Surface
 
@@ -188,7 +188,7 @@ npm run build
 
 ## Portfolio Notes
 
-This project is strongest when presented as a backend-heavy full-stack system, not just an AI wrapper. Good interview topics include:
+This project is strongest when presented as a backend-heavy full-stack system that uses AI only as an optional interpretation layer. Good interview topics include:
 
 - Moving long-running repository analysis out of the request path with Redis/RQ.
 - Persisting job state and progress events so workers and API processes can recover shared state.

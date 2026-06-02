@@ -14,9 +14,9 @@ export function CommandBar({
   return (
     <header className="command-bar">
       <p className="command-bar-hero">
-        Is your repo <em>interview-ready?</em>
+        Is this project <em>resume-ready?</em>
       </p>
-      <p className="command-bar-sub">Paste a public GitHub URL to get your SDE intern readiness score.</p>
+      <p className="command-bar-sub">Paste a public GitHub repo to see what looks production-shaped, what still reads toy-like, and what to fix next.</p>
       <div className="repo-command">
         <Github size={16} color="var(--text-faint)" />
         <input

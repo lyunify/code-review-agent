@@ -58,7 +58,7 @@ export function Sidebar({
         </button>
         <button className={activeView === 'mentor' ? 'active' : ''} onClick={() => onViewChange('mentor')}>
           <Sparkles size={18} />
-          AI mentor
+          Interview prep
         </button>
       </nav>
 
