@@ -68,31 +68,37 @@ More detail: [docs/architecture.md](docs/architecture.md)
 - Export a Markdown readiness report.
 - Track background job progress through a persisted timeline.
 
-## Screenshots
+## Product Walkthrough
 
-### Home
+### Start With A Repository URL
+
+Paste a public GitHub repository URL to start a readiness review. The app is built for students who need a concrete answer to whether a project is strong enough for a resume or technical screen.
 
 ![Home](docs/screenshots/01-home.png)
 
-### Analysis Pipeline
+### Review Dashboard
 
-![Analysis pipeline](docs/screenshots/02-loading.png)
-
-### Overview
+The main dashboard summarizes repository quality, languages, risk signals, and a hiring-oriented toy-project risk readout. The goal is to make production signals visible quickly, not just produce a generic AI score.
 
 ![Overview](docs/screenshots/03-overview.png)
 
-### Interview Coach
-
-![Interview Coach](docs/screenshots/04-interview-coach.png)
-
 ### Action Plan
+
+The action plan turns failed readiness checks into prioritized fixes with why it matters, how to improve it, and what resume signal the fix creates.
 
 ![Action Plan](docs/screenshots/05-action-plan.png)
 
 ### Readiness Rubric
 
+The rubric keeps the score explainable by separating deterministic checklist signals such as README quality, tests, dependency files, deployment config, API docs, and frontend/backend integration.
+
 ![Rubric](docs/screenshots/06-rubric.png)
+
+### Interview Coach
+
+The mentor view converts repository analysis into resume bullets, interview questions, STAR-style talking points, and follow-up work that a student can actually use.
+
+![Interview Coach](docs/screenshots/04-interview-coach.png)
 
 ## Run The Full Stack
 
