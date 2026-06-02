@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle2, Download, Github, Layers3, Network, PackageCheck, ShieldCheck, ShieldQuestion } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Download, Github, Network, PackageCheck, ShieldCheck, ShieldQuestion } from 'lucide-react'
 import { generateMarkdownReport, getReportFileName } from '../report'
 import type { AnalyzeResponse, ArchitectureEdge, ArchitectureNode, ProjectIntelligence, ReadinessChecklistItem, StackEvidence, StackItem, ToyProjectRisk } from '../types'
 import type { Tab } from '../uiTypes'
@@ -69,10 +69,16 @@ export function Dashboard({
 
         {/* identity */}
         <div className="card b-tile b-id">
-          <p className="repo-name">
-            <Github size={20} />
-            {repoName}
-          </p>
+          <div className="repo-title-row">
+            <p className="repo-name">
+              <Github size={20} />
+              {repoName}
+            </p>
+            <button className="icon-btn report-button" onClick={handleDownloadReport}>
+              <Download size={14} />
+              Report
+            </button>
+          </div>
           <p className="repo-sub">
             {result.readiness.score}/100 · {result.analysis.total_files.toLocaleString()} files ·{' '}
             {languageEntries.length} languages · {result.analysis.risks.length} risks
@@ -143,32 +149,6 @@ export function Dashboard({
 
         <StackMap intelligence={intelligence} />
         <ArchitectureMap intelligence={intelligence} />
-
-        <div className="card b-tile b-signals">
-          <details className="repo-metadata">
-            <summary>
-              <span>
-                <Layers3 size={16} />
-                Repo metadata
-              </span>
-              <small>GitHub profile signals, kept as supporting context</small>
-            </summary>
-            <div className="metadata-grid compact">
-              <MetadataItem label="Description" value={result.github_metadata.description ? 'Present' : 'Missing'} />
-              <MetadataItem label="License" value={result.github_metadata.license_spdx_id ?? 'Missing'} />
-              <MetadataItem label="Topics" value={result.github_metadata.topics.length.toString()} />
-              <MetadataItem label="Homepage" value={result.github_metadata.has_homepage ? 'Present' : 'Missing'} />
-              <MetadataItem label="Fork" value={result.github_metadata.is_fork ? 'Yes' : 'No'} />
-              <MetadataItem label="Branch" value={result.github_metadata.default_branch ?? 'Unknown'} />
-            </div>
-          </details>
-          <div className="report-row">
-            <button className="icon-btn report-button" onClick={handleDownloadReport}>
-              <Download size={14} />
-              Report
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   )
@@ -516,15 +496,6 @@ function FlowEvidence({ edge }: { edge: ArchitectureEdge }) {
 function evidencePath(evidence?: StackEvidence) {
   if (!evidence) return 'static scan'
   return evidence.path.length > 32 ? `${evidence.path.slice(0, 29)}...` : evidence.path
-}
-
-function MetadataItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="metadata-item">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
 }
 
 function TabContent({ result, activeTab }: { result: AnalyzeResponse; activeTab: Tab }) {

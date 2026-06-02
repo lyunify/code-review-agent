@@ -197,15 +197,9 @@ describe('Dashboard', () => {
     expect(screen.getByText('typescript')).toBeDefined()
   })
 
-  it('shows Missing for null description metadata', () => {
-    const noDescResult = {
-      ...mockResult,
-      github_metadata: { ...mockResult.github_metadata, description: null },
-    }
-    render(<Dashboard result={noDescResult} activeTab="resume" onTabChange={vi.fn()} />)
-    // Description Missing label should appear
-    const items = screen.getAllByText('Missing')
-    expect(items.length).toBeGreaterThan(0)
+  it('keeps the report download action in the primary repo card', () => {
+    render(<Dashboard result={mockResult} activeTab="resume" onTabChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /report/i })).toBeDefined()
   })
 })
 
