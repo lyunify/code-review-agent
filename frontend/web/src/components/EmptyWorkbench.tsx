@@ -16,9 +16,7 @@ export function EmptyWorkbench({
       ? 'Check the rubric behind the resume-readiness verdict.'
       : activeView === 'action'
         ? 'Turn weak repo signals into a focused fix plan.'
-        : activeView === 'mentor'
-          ? 'Prepare to explain this project in an interview.'
-          : 'Find out if this project is ready for your internship resume.'
+        : 'Find out if this project is ready for your internship resume.'
 
   return (
     <section className="empty-workbench">

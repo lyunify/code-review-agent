@@ -1,4 +1,4 @@
-import { ClipboardList, Gauge, Github, History, ListChecks, LogIn, LogOut, Sparkles, User } from 'lucide-react'
+import { ClipboardList, Gauge, Github, History, ListChecks, LogIn, LogOut, User } from 'lucide-react'
 import type { AnalyzeResponse, CurrentUser, HistoryRecord } from '../types'
 import type { View } from '../uiTypes'
 import { scoreBand } from './Shared'
@@ -55,10 +55,6 @@ export function Sidebar({
         <button className={activeView === 'action' ? 'active' : ''} onClick={() => onViewChange('action')}>
           <ListChecks size={18} />
           Action plan
-        </button>
-        <button className={activeView === 'mentor' ? 'active' : ''} onClick={() => onViewChange('mentor')}>
-          <Sparkles size={18} />
-          Interview prep
         </button>
       </nav>
 

@@ -15,7 +15,6 @@ import { Dashboard } from './components/Dashboard'
 import { EmptyWorkbench } from './components/EmptyWorkbench'
 import { HistoryDrawer } from './components/HistoryDrawer'
 import { LoadingWorkbench } from './components/LoadingWorkbench'
-import { MentorView } from './components/MentorView'
 import { RubricView } from './components/RubricView'
 import { Sidebar } from './components/Sidebar'
 import { getDemoAnalysisResult } from './demoData'
@@ -195,7 +194,7 @@ function App() {
             ) : activeView === 'rubric' ? (
               <RubricView result={result} />
             ) : (
-              <MentorView result={result} />
+              <Dashboard result={result} activeTab={activeTab} onTabChange={setActiveTab} />
             )
           ) : (
             <EmptyWorkbench history={history} activeView={activeView} onTrySampleRepo={handleTrySampleRepo} />

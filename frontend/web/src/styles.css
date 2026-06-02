@@ -480,28 +480,6 @@ h1,h2,h3,h4 { margin: 0; font-weight: 400; }
 .action-card-field-evidence p { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; }
 .action-card-field:last-child p { color: var(--ready); }
 
-/* ── Mentor (two-column) ─────────────────────────────────── */
-.coach-assessment { padding-left: 20px; border-left: 3px solid var(--primary); margin-bottom: 30px; }
-.coach-assessment .coach-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); display: block; margin-bottom: 10px; }
-.coach-assessment p { font-family: var(--font-display); font-size: 30px; line-height: 1.36; letter-spacing: -0.005em; color: var(--text); }
-.mentor-grid { display: grid; grid-template-columns: 330px 1fr; gap: 26px; align-items: start; }
-.mentor-rail { position: sticky; top: 92px; display: flex; flex-direction: column; gap: 18px; }
-.mentor-rail .coach-assessment { margin-bottom: 0; }
-.mentor-rail .coach-assessment p { font-size: 23px; line-height: 1.4; }
-.mentor-rail .panel { margin-bottom: 0; padding: 22px; }
-.mentor-main { min-width: 0; }
-.mentor-main > .panel-eyebrow { display: block; margin-bottom: 14px; }
-@media (max-width: 900px) { .mentor-grid { grid-template-columns: 1fr; } .mentor-rail { position: static; } }
-.interview-cards { display: flex; flex-direction: column; gap: 16px; }
-.interview-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-card); }
-.interview-card-q { display: flex; gap: 16px; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); background: var(--primary-soft); }
-.interview-q-num { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--primary); flex-shrink: 0; }
-.interview-q-text { font-family: var(--font-serif); font-weight: 500; font-size: 18px; letter-spacing: -0.01em; line-height: 1.4; }
-.star-grid { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-.star-row { display: grid; grid-template-columns: 84px 1fr; gap: 18px; align-items: start; }
-.star-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary); padding-top: 3px; }
-.star-hint { font-size: 14px; color: var(--text-dim); line-height: 1.55; }
-
 /* ── Rubric ──────────────────────────────────────────────── */
 .rubric-hero { display: flex; align-items: center; gap: 28px; margin-bottom: 26px; flex-wrap: wrap; }
 .rubric-hero-meta { display: flex; flex-direction: column; gap: 6px; }

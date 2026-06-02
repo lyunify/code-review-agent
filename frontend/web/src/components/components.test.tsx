@@ -6,7 +6,6 @@ import { CommandBar } from './CommandBar'
 import { Dashboard } from './Dashboard'
 import { EmptyWorkbench } from './EmptyWorkbench'
 import { LoadingWorkbench } from './LoadingWorkbench'
-import { MentorView } from './MentorView'
 import { RubricView } from './RubricView'
 import { Sidebar } from './Sidebar'
 import { Metric, ChecklistRow } from './Shared'
@@ -219,11 +218,6 @@ describe('EmptyWorkbench', () => {
     expect(screen.getByText('Turn weak repo signals into a focused fix plan.')).toBeDefined()
   })
 
-  it('shows mentor message for mentor view', () => {
-    render(<EmptyWorkbench history={[]} activeView="mentor" onTrySampleRepo={vi.fn()} />)
-    expect(screen.getByText(/explain this project in an interview/)).toBeDefined()
-  })
-
   it('shows history count when history exists', () => {
     const history: HistoryRecord[] = [
       { id: 1, repo_url: 'https://github.com/a/b', created_at: '2025-01-01', total_files: 5, total_directories: 2, language_count: 1, risk_count: 0, summary: 'ok' },
@@ -247,15 +241,6 @@ describe('LoadingWorkbench', () => {
     expect(screen.getByText(/Reviewing/)).toBeDefined()
     expect(screen.getByText('Clone repository')).toBeDefined()
     expect(screen.getByText('Scan project structure')).toBeDefined()
-  })
-})
-
-describe('MentorView', () => {
-  it('renders mentor summary and bullets', () => {
-    render(<MentorView result={mockResult} />)
-    expect(screen.getByText('Good foundational project, needs more tests.')).toBeDefined()
-    expect(screen.getByText('Built a full-stack app')).toBeDefined()
-    expect(screen.getByText(/How did you structure the backend/)).toBeDefined()
   })
 })
 
@@ -329,8 +314,8 @@ describe('Sidebar', () => {
         onSelectHistory={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByText('Interview prep'))
-    expect(onViewChange).toHaveBeenCalledWith('mentor')
+    fireEvent.click(screen.getByText('Action plan'))
+    expect(onViewChange).toHaveBeenCalledWith('action')
   })
 
   it('calls onSelectHistory when history item is clicked', () => {
