@@ -489,6 +489,7 @@ h1,h2,h3,h4 { margin: 0; font-weight: 400; }
 .action-card-field { display: grid; grid-template-columns: 76px 1fr; gap: 16px; align-items: start; }
 .action-card-field span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); padding-top: 3px; }
 .action-card-field p { font-size: 14px; color: var(--text-dim); line-height: 1.55; }
+.action-card-field-evidence p { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; }
 .action-card-field:last-child p { color: var(--ready); }
 
 /* ── Mentor (two-column) ─────────────────────────────────── */

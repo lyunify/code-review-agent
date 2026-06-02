@@ -72,6 +72,7 @@ const result: AnalyzeResponse = {
       {
         title: 'Add automated tests',
         category: 'Testing',
+        evidence: 'No test files were detected.',
         why_it_matters: 'Interviewers trust projects more when behavior is tested.',
         how_to_improve: 'Add tests for the core workflow.',
         resume_impact: 'Shows engineering discipline.',
@@ -91,6 +92,7 @@ describe('generateMarkdownReport', () => {
     expect(report).not.toContain('[object Object]')
     expect(report).toContain('## Action Plan')
     expect(report).toContain('Add automated tests')
+    expect(report).toContain('Evidence: No test files were detected.')
     expect(report).toContain('## GitHub Profile Signals')
     expect(report).toContain('- License: MIT')
     expect(report).toContain('- [x] README exists')

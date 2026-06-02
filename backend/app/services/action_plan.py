@@ -148,6 +148,64 @@ ACTION_PLAN_GUIDANCE = {
 }
 
 
+def _risk_evidence(analysis: RepositoryAnalysis, keyword: str) -> str:
+    for risk in analysis.risks:
+        haystack = f"{risk.message} {risk.path or ''}".lower()
+        if keyword.lower() in haystack:
+            return f"{risk.message}{f' ({risk.path})' if risk.path else ''}"
+    return ""
+
+
+def _action_evidence(item_name: str, analysis: RepositoryAnalysis) -> str:
+    if item_name == "Automated tests exist":
+        return _risk_evidence(analysis, "test") or "No test files or test directories were detected in the scan."
+    if item_name == "README exists":
+        return "No README file was detected in the repository root or scanned paths."
+    if item_name == "README includes setup instructions":
+        return "README exists, but setup markers such as install, setup, run, or getting started were not detected."
+    if item_name == "README explains project purpose":
+        return "README exists, but it does not clearly describe the target user, problem, or main workflow."
+    if item_name == "README includes usage or demo details":
+        return "README exists, but no usage walkthrough, sample input, demo command, or expected output was detected."
+    if item_name == "README lists tech stack":
+        return "README exists, but no clear tech stack section was detected."
+    if item_name == "README includes screenshots or demo assets":
+        return "README does not reference screenshots, demo images, GIFs, videos, or preview assets."
+    if item_name == "Dependency file exists":
+        return "No dependency manifest such as package.json, pyproject.toml, requirements.txt, pom.xml, or go.mod was detected."
+    if item_name == "License file exists":
+        return "No LICENSE file or GitHub license metadata was detected."
+    if item_name == "CI workflow exists":
+        return "No GitHub Actions workflow or common CI configuration was detected."
+    if item_name == "API documentation exists":
+        return "No API documentation, OpenAPI/Swagger reference, endpoint examples, or curl examples were detected."
+    if item_name == "Frontend calls backend API":
+        return "Frontend files did not show clear backend API calls through fetch, axios, /api, localhost, or API client references."
+    if item_name == "Deployment configuration exists":
+        return "No Dockerfile, docker-compose.yml, Procfile, vercel.json, render.yaml, or similar deployment config was detected."
+    if item_name == ".env.example exists":
+        return "No .env.example, .env.sample, or env.example file was detected."
+    if item_name == ".gitignore exists":
+        return "No .gitignore file was detected, so generated files and local secrets may be easier to commit accidentally."
+    if item_name == "Architecture docs exist":
+        return "No docs directory or architecture/design note was detected."
+    if item_name == "No long files detected":
+        long_file_risk = _risk_evidence(analysis, "long file")
+        if long_file_risk:
+            return long_file_risk
+        if analysis.largest_files:
+            largest = analysis.largest_files[0]
+            return f"Largest scanned file is {largest.path} with {largest.lines} lines."
+        return "The scan found file-size risk signals that make the project harder to review."
+    if item_name == "Risk density is low":
+        return f"{len(analysis.risks)} risk signals were found across {analysis.total_files} scanned files."
+    if item_name == "Project has multiple organized directories":
+        return f"Only {analysis.total_directories} directories were detected, so project boundaries may be hard to read."
+    if item_name == "Frontend/backend boundaries are clear":
+        return "The scan did not find clear top-level frontend and backend boundaries."
+    return "This recommendation is based on a failed readiness checklist item from the repository scan."
+
+
 def generate_action_plan(analysis: RepositoryAnalysis, readiness: ResumeReadiness) -> ActionPlan:
     priority_order = [
         "Automated tests exist",
@@ -173,13 +231,18 @@ def generate_action_plan(analysis: RepositoryAnalysis, readiness: ResumeReadines
     ]
     failed_by_name = {item.name: item for item in readiness.checklist if not item.passed}
     failed_items = [failed_by_name[name] for name in priority_order if name in failed_by_name]
-    items = [ACTION_PLAN_GUIDANCE[item.name] for item in failed_items if item.name in ACTION_PLAN_GUIDANCE]
+    items = [
+        ACTION_PLAN_GUIDANCE[item.name].model_copy(update={"evidence": _action_evidence(item.name, analysis)})
+        for item in failed_items
+        if item.name in ACTION_PLAN_GUIDANCE
+    ]
 
     if not items:
         items = [
             ActionPlanItem(
                 title="Prepare the interview story",
                 category="Interview",
+                evidence="All readiness checklist items passed for this scan.",
                 why_it_matters="Once the repo is polished, the next step is turning it into a clear engineering narrative.",
                 how_to_improve=(
                     f"Practice explaining the architecture, tradeoffs, and one improvement you would make next "

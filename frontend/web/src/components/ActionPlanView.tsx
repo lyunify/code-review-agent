@@ -19,6 +19,12 @@ export function ActionPlanView({ result }: { result: AnalyzeResponse }) {
               <span className="action-card-category">{item.category}</span>
               <h3 className="action-card-title">{item.title}</h3>
               <div className="action-card-fields">
+                {item.evidence ? (
+                  <div className="action-card-field action-card-field-evidence">
+                    <span>Evidence</span>
+                    <p>{item.evidence}</p>
+                  </div>
+                ) : null}
                 <div className="action-card-field">
                   <span>Why</span>
                   <p>{item.why_it_matters}</p>

@@ -328,6 +328,7 @@ export function getDemoAnalysisResult(): AnalyzeResponse {
         {
           title: 'Refactor large frontend sections',
           category: 'Maintainability',
+          evidence: 'Largest file signal points to frontend/web/src/App.tsx as the hardest area to review.',
           why_it_matters:
             'Smaller components make the code easier to review, test, and discuss during a technical interview.',
           how_to_improve:
@@ -337,6 +338,7 @@ export function getDemoAnalysisResult(): AnalyzeResponse {
         {
           title: 'Replace screenshot placeholders',
           category: 'Presentation',
+          evidence: 'README has the product story, but demo assets are still a visible portfolio gap.',
           why_it_matters:
             'Recruiters and interviewers often inspect a GitHub README before running the project locally.',
           how_to_improve:
@@ -346,6 +348,7 @@ export function getDemoAnalysisResult(): AnalyzeResponse {
         {
           title: 'Add deployment notes',
           category: 'Product',
+          evidence: 'The scan found local orchestration, but no public demo or deployment walkthrough.',
           why_it_matters:
             'A hosted demo lowers friction for interviewers and makes the project easier to share.',
           how_to_improve:

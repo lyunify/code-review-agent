@@ -8,11 +8,16 @@ export function generateMarkdownReport(result: AnalyzeResponse): string {
   const priorityFixes = result.readiness.priority_fixes.map((fix, index) => `${index + 1}. ${fix}`).join('\n')
   const actionPlan = result.action_plan.items
     .map(
-      (item, index) =>
-        `${index + 1}. **${item.title}** (${item.category})\n` +
-        `   - Why it matters: ${item.why_it_matters}\n` +
-        `   - How to improve: ${item.how_to_improve}\n` +
-        `   - Resume impact: ${item.resume_impact}`,
+      (item, index) => {
+        const evidence = item.evidence ? `   - Evidence: ${item.evidence}\n` : ''
+        return (
+          `${index + 1}. **${item.title}** (${item.category})\n` +
+          evidence +
+          `   - Why it matters: ${item.why_it_matters}\n` +
+          `   - How to improve: ${item.how_to_improve}\n` +
+          `   - Resume impact: ${item.resume_impact}`
+        )
+      },
     )
     .join('\n')
   const resumeBullets = result.mentor_feedback.resume_bullets.map((bullet) => `- ${bullet}`).join('\n')

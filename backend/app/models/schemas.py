@@ -172,6 +172,7 @@ class MentorFeedback(BaseModel):
 class ActionPlanItem(BaseModel):
     title: str
     category: str
+    evidence: str = ""
     why_it_matters: str
     how_to_improve: str
     resume_impact: str

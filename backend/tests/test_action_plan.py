@@ -35,9 +35,11 @@ def test_action_plan_turns_failed_readiness_items_into_student_fixes() -> None:
     assert len(action_plan.items) == 5
     assert action_plan.items[0].title == "Add automated tests"
     assert action_plan.items[0].category == "Testing"
+    assert action_plan.items[0].evidence == "No test files or test directories were detected in the scan."
     assert "core workflow" in action_plan.items[0].how_to_improve
     assert action_plan.items[0].resume_impact == "Shows engineering discipline and reduces the project looking like a one-off demo."
     assert action_plan.items[1].title == "Document local setup"
+    assert "setup markers" in action_plan.items[1].evidence
     assert any(item.title == "Add a CI workflow" for item in action_plan.items)
 
 
@@ -73,3 +75,4 @@ def test_action_plan_gives_launch_polish_for_resume_ready_project() -> None:
     assert len(action_plan.items) == 1
     assert action_plan.items[0].title == "Prepare the interview story"
     assert action_plan.items[0].category == "Interview"
+    assert action_plan.items[0].evidence == "All readiness checklist items passed for this scan."

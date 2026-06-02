@@ -83,6 +83,7 @@ const mockResult: AnalyzeResponse = {
       {
         title: 'Add unit tests',
         category: 'Testing',
+        evidence: 'No test files were detected.',
         why_it_matters: 'Increases confidence',
         how_to_improve: 'Use pytest',
         resume_impact: 'Shows quality focus',
@@ -96,6 +97,7 @@ describe('ActionPlanView', () => {
     render(<ActionPlanView result={mockResult} />)
     expect(screen.getByText('Add unit tests')).toBeDefined()
     expect(screen.getByText('Testing')).toBeDefined()
+    expect(screen.getByText('No test files were detected.')).toBeDefined()
     expect(screen.getByText('1 priority steps')).toBeDefined()
   })
 })

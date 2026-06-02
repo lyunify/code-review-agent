@@ -134,6 +134,7 @@ export type MentorFeedback = {
 export type ActionPlanItem = {
   title: string
   category: string
+  evidence?: string
   why_it_matters: string
   how_to_improve: string
   resume_impact: string
